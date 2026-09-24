@@ -185,8 +185,30 @@ function tabBar() {
 
 // ---------- 起動 ----------
 
+var IDLE_MINUTES = 30;   // この時間なにも操作がなければログアウト（共用の端末で開きっぱなしにされたとき用）
+
+function watchIdle_() {
+  var last = Date.now();
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+    window.addEventListener(ev, function () { last = Date.now(); }, { passive: true, capture: true });
+  });
+  var check = function () {
+    if (!Api.token || Date.now() - last < IDLE_MINUTES * 60000) return;
+    logout();
+    toast(IDLE_MINUTES + '分間操作がなかったため、ログアウトしました', 'err');
+  };
+  setInterval(check, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+}
+
 function start() {
+  // 別のサイトの枠（iframe）の中では開かない（重ねて押させる細工の対策）
+  if (window.top !== window.self) {
+    document.getElementById('app').textContent = 'このページは別のサイトの中では開けません。';
+    return;
+  }
   Api.load();
+  watchIdle_();
   Api.onAuthLost = function (msg) {
     resetMember();
     resetAdmin();

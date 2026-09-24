@@ -7,7 +7,7 @@
  * 認証・権限チェック・入力検証はすべてこのGAS側で行う。
  */
 
-var APP_VERSION = '0.3.0';
+var APP_VERSION = '0.3.1';
 
 // action → 必要な権限（null=ログイン不要, 'any'=ログインしていれば誰でも）と処理
 var ROUTES = {
@@ -126,18 +126,24 @@ function safeEqual_(a, b) {
   return diff === 0;
 }
 
-/** 同時に書き込まないように排他をかけて実行 */
+/** いま排他をかけているか（この実行の中で withLock_ が入れ子になったとき用） */
+var lockDepth_ = 0;
+
+/** 同時に書き込まないように排他をかけて実行（入れ子で呼んでもよい） */
 function withLock_(fn) {
+  if (lockDepth_ > 0) return fn();
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(20000)) fail_('busy', '混み合っています。少し待ってからもう一度お試しください');
+  lockDepth_++;
   try {
     return fn();
   } finally {
+    lockDepth_--;
     lock.releaseLock();
   }
 }
 
-/** CacheService の数を1増やして返す（回数制限用） */
+/** CacheService の数を1増やして返す（回数制限用。同時に数えると数え漏れるので排他の中で呼ぶ） */
 function incr_(key, ttlSec) {
   var c = CacheService.getScriptCache();
   var n = Number(c.get(key) || 0) + 1;

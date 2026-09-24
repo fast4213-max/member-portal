@@ -16,10 +16,17 @@ var LOG_CATEGORIES = {
 };
 
 function logAudit_(role, actor, action, targetId, detail) {
-  appendRows_('audit_log', [{
-    timestamp: now_(), role: role, actor: actor, action: action,
-    target_id: targetId || '', detail: str_(detail, 300)
-  }]);
+  var row = { timestamp: now_(), role: role, actor: actor, action: action,
+              target_id: targetId || '', detail: str_(detail, 300) };
+  // 同時に追記すると同じ行に上書きして記録が消えるので、排他をかけて書く
+  if (lockDepth_ > 0) return appendRows_('audit_log', [row]);
+  var lock = LockService.getScriptLock();
+  var got = lock.tryLock(10000);
+  try {
+    appendRows_('audit_log', [row]);   // 排他が取れなくても記録は残す
+  } finally {
+    if (got) lock.releaseLock();
+  }
 }
 
 /**

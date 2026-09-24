@@ -15,6 +15,7 @@ var LOCK_MINUTES = 15;               // ↑を超えたときのロック時間
 var VERIFY_MAX_MISS_PER_LOGIN = 5;   // 本人確認（社員番号＋生年月日）の失敗：1回のログインあたり
 var VERIFY_MAX_MISS_PER_HOUR = 300;  // 本人確認の失敗：全体で1時間あたり（総当たり対策）
 var REQUESTS_PER_DAY = 20;           // 1人（requester_key）あたり1日の申請回数
+var REQUESTS_PER_HOUR_ALL = 200;     // 全体で1時間あたりの申請回数（いたずらの大量申請対策）
 
 var ROLE_NAMES = { member: '共通', officer: 'admin' };
 
@@ -33,6 +34,11 @@ function hashPassword_(pw) {
  * ログインと完全削除時の再入力の両方で使う。
  */
 function checkPasswordAttempt_(role, password) {
+  // 同時にたくさん送られても回数を数え漏らさないよう、排他の中で照合する
+  return withLock_(function () { checkPasswordLocked_(role, password); });
+}
+
+function checkPasswordLocked_(role, password) {
   var cache = CacheService.getScriptCache();
   var actor = ROLE_NAMES[role];
   if (cache.get('lock:' + role)) {
@@ -119,8 +125,10 @@ function guardVerify_(session) {
 
 /** 本人確認に失敗したときに呼ぶ：上限に達したらログアウトさせる */
 function recordMiss_(session) {
-  var n = incr_('vmiss:' + session.token, SESSION_HOURS * 3600);
-  var h = incr_(hourKey_(), 3600);
+  var c = withLock_(function () {
+    return { n: incr_('vmiss:' + session.token, SESSION_HOURS * 3600), h: incr_(hourKey_(), 3600) };
+  });
+  var n = c.n, h = c.h;
   if (h === VERIFY_MAX_MISS_PER_HOUR) logAudit_('member', ROLE_NAMES.member, 'lockout', '', '本人確認（全体）');
   if (n >= VERIFY_MAX_MISS_PER_LOGIN) {
     CacheService.getScriptCache().remove('tok:' + session.token);
@@ -129,8 +137,16 @@ function recordMiss_(session) {
   }
 }
 
-/** 1人1日あたりの申請回数を数える。上限を超えたら拒否 */
+/** 申請回数を数える（全体で1時間・1人1日）。上限を超えたら拒否。withLock_ の中で呼ぶ */
 function countRequest_(key) {
+  var hour = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMddHH');
+  var all = incr_('rq:h:' + hour, 3600);
+  if (all > REQUESTS_PER_HOUR_ALL) {
+    if (all === REQUESTS_PER_HOUR_ALL + 1) {
+      logAudit_('member', ROLE_NAMES.member, 'request_limit', '', '全体1時間' + REQUESTS_PER_HOUR_ALL + '回');
+    }
+    fail_('busy', '申請が集中しているため、一時的に受付を止めています。1時間ほどおいてお試しください');
+  }
   var day = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd');
   var n = incr_('rq:' + day + ':' + key, 24 * 3600);
   if (n > REQUESTS_PER_DAY) {
