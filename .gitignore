@@ -1,0 +1,10 @@
+.clasprc.json
+.clasp.json
+.env
+*.secret
+node_modules/
+.DS_Store
+# 実データは絶対にコミットしない
+*.csv
+*.xlsx
+*.pdf
