@@ -258,3 +258,6 @@ select.in{appearance:auto}
 /* 台帳：家族の氏名欄（上にフリガナ・下に氏名） */
 .fam-kana{height:17px;padding:0 7px;border-bottom:1px dotted #999;display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap}
 .fam-nm{flex:1 1 auto;padding:0 7px;display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap}
+/* 押せるカード（承認待ち）は白のまま、触れたときだけ枠を青く */
+button.stat{cursor:pointer}
+button.stat:hover{border-color:#B9C4E8;box-shadow:0 4px 16px rgba(31,63,191,.08)}

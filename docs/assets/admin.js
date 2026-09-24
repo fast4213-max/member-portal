@@ -125,7 +125,7 @@ SCREENS['a-list'] = {
     return h('div', { class: 'wrap w-admin', style: 'gap:20px' },
       h('div', { class: 'stats' },
         stat('登録者数', A.totalAll, '人'),
-        stat('承認待ち', A.pendingCount, '件 →', true, function () { openAdmin('a-req'); }),
+        stat('承認待ち', A.pendingCount, '件', false, function () { openAdmin('a-req'); }),
         stat('ゴミ箱', A.trashCount, '件')),
       h('div', { class: 'panel' },
         h('div', { class: 'toolbar' },
