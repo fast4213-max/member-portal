@@ -30,7 +30,7 @@
       └─▶ 時間トリガー（1日1回）→ LINE Messaging API push（「承認待ちがN件」だけ）
 ```
 
-- 画面：GitHub Pages（`main` ブランチの `/docs` を公開）。Tailwind CDN＋素のJS。ビルドなし
+- 画面：GitHub Pages（`main` ブランチの `/docs` を公開）。素のJS＋自前CSS（モックのCSSを移植。Tailwindは不使用）。ビルドなし
 - API／DB：Google Apps Script＋スプレッドシート（共有は「制限付き」のまま）
 - 秘密の値（パスワード・シートID・LINEトークン等）は**すべてGASのスクリプトプロパティ**。リポジトリにはコードだけ
 
@@ -193,9 +193,12 @@ member-portal/
 │   ├── index.html             # 1ページ構成（画面は JS で切替）
 │   └── assets/
 │       ├── api.js             # GAS_URL 定数と fetch 共通処理
-│       ├── app.js             # 画面切替・フォーム・一覧
-│       ├── ledger.js          # 台帳表示（PDF風レイアウト）の描画
-│       └── style.css          # 印刷用CSS・台帳の罫線など
+│       ├── ui.js              # 要素作成・アイコン・入力整形・画面側チェック
+│       ├── ledger.js          # 台帳表示（紙の形・読みやすい表示・印刷）
+│       ├── app.js             # 土台（画面切替・ログイン・管理メニュー）
+│       ├── member.js          # 組合員の画面
+│       ├── admin.js           # 役員の画面
+│       └── style.css          # 見た目・印刷用CSS
 ├── gas/
 │   ├── Code.gs  auth.gs  members.gs  requests.gs  trash.gs
 │   ├── audit.gs  line.gs  backup.gs  appsscript.json
