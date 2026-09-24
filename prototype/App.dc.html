@@ -1,0 +1,1641 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>組合員台帳アプリ（本体）</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e74f08885814685ddef69d85a054250e">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&amp;family=Zen+Kaku+Gothic+New:wght@500;700;900&amp;family=Shippori+Mincho:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="app {{wideCls}}" ref="{{rootRef}}" style="font-family: 'IBM Plex Sans JP', sans-serif; color: #0E1726">
+
+  <!-- ================= ログイン ================= -->
+  <sc-if value="{{isLogin}}" hint-placeholder-val="{{ true }}">
+    <div class="login">
+      <div class="login-hero">
+        <div class="ring" style="right: -120px; top: -80px; width: 340px; height: 340px"></div>
+        <div class="ring" style="right: -60px; top: -20px; width: 220px; height: 220px"></div>
+        <div class="logo" style="width: 48px; height: 48px; border-radius: 14px">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17l3 3v11.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M8 9h8"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; position: relative">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: .12em; color: #9FB0D9">天王寺車掌区分会</div>
+          <h1 class="login-title">組合員台帳<br>ポータル</h1>
+          <p style="margin: 0; font-size: 14px; line-height: 1.7; color: #C3CDE6">登録・変更の申請はここから。<br>役員の承認後に台帳へ反映されます。</p>
+        </div>
+      </div>
+      <div class="login-card">
+        <div class="tabs" role="tablist" aria-label="ログインの種類">
+          <button type="button" role="tab" class="tab {{memberTabCls}}" aria-selected="{{isMemberTab}}" onClick="{{pickMemberTab}}">共通</button>
+          <button type="button" role="tab" class="tab {{adminTabCls}}" aria-selected="{{isAdminTab}}" onClick="{{pickAdminTab}}">管理</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="pw" style="font-size: 14px; font-weight: 600">{{pwLabel}}</label>
+          <div style="position: relative">
+            <input id="pw" class="pw" type="{{pwType}}" value="{{pw}}" onChange="{{onPw}}" autocomplete="current-password" placeholder="••••••••">
+            <button type="button" class="eye" aria-label="{{eyeLabel}}" onClick="{{toggleShow}}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+          <p style="margin: 0; font-size: 13px; color: #5A6475">{{pwHint}}</p>
+        </div>
+        <button type="button" class="btn {{loginBtnCls}} full" onClick="{{doLogin}}" style="height: 52px; font-size: 16px">
+          ログイン
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
+        </button>
+        <div class="caution">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3l9 16H3z"></path><path d="M12 10v4"></path><path d="M12 17.5v.01"></path></svg>
+          <span>個人情報を含みます。画面の共有・スクリーンショットの取り扱いに注意してください。</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ================= 管理サイドバー（PC） ================= -->
+  <sc-if value="{{showSide}}" hint-placeholder-val="{{ false }}">
+    <aside class="side">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 0 8px 28px">
+        <div class="logo" style="width: 38px; height: 38px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17l3 3v11.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M8 9h8"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div class="h" style="font-weight: 900; font-size: 16px">組合員台帳</div>
+          <div style="font-size: 11.5px; color: #9FB0D9">管理コンソール</div>
+        </div>
+      </div>
+      <nav aria-label="管理メニュー" style="display: flex; flex-direction: column; gap: 4px">
+        <button type="button" class="nav {{navList}}" onClick="{{toList}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+          台帳一覧
+        </button>
+        <button type="button" class="nav {{navReq}}" onClick="{{toReq}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4H15"></path></svg>
+          承認待ち
+          <sc-if value="{{hasPending}}" hint-placeholder-val="{{ true }}"><span class="bdg">{{pendingCount}}</span></sc-if>
+        </button>
+        <button type="button" class="nav {{navLog}}" onClick="{{toLog}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+          行動ログ
+        </button>
+        <button type="button" class="nav {{navTrash}}" onClick="{{toTrash}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V4.5h6V7"></path><path d="M6 7l1 13h10l1-13"></path></svg>
+          ゴミ箱
+          <sc-if value="{{hasTrash}}" hint-placeholder-val="{{ true }}"><span style="margin-left: auto; font-size: 12px; color: #9FB0D9">{{trashCount}}</span></sc-if>
+        </button>
+      </nav>
+      <div style="margin-top: auto; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.06); font-size: 12px; line-height: 1.6; color: #C3CDE6">個人情報を含みます。画面の共有・スクリーンショットの取り扱いに注意してください。</div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{notLogin}}" hint-placeholder-val="{{ false }}">
+    <div class="col">
+
+      <!-- ================= トップバー ================= -->
+      <div class="tb">
+        <sc-if value="{{hasBack}}" hint-placeholder-val="{{ false }}">
+          <button type="button" class="icb" aria-label="戻る" onClick="{{back}}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{showLogo}}" hint-placeholder-val="{{ true }}">
+          <div class="logo" style="margin: 0 6px 0 8px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17l3 3v11.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M8 9h8"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
+          </div>
+        </sc-if>
+        <div class="tb-title">{{title}}</div>
+        <sc-if value="{{isLedger}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 8px; margin-right: 4px">
+            <button type="button" class="btn dng sm ico" onClick="{{askDelete}}" aria-label="ゴミ箱へ移動">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V4.5h6V7"></path><path d="M6 7l1 13h10l1-13"></path></svg>
+              <span class="bt-lbl">ゴミ箱へ移動</span>
+            </button>
+            <button type="button" class="btn pri sm ico" onClick="{{print}}" aria-label="印刷">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V4h10v5"></path><rect x="4" y="9" width="16" height="7" rx="1.5"></rect><path d="M7 14h10v6H7z"></path></svg>
+              <span class="bt-lbl">印刷（A4）</span>
+            </button>
+          </div>
+        </sc-if>
+        <button type="button" class="lo" onClick="{{logout}}">ログアウト</button>
+      </div>
+
+      <div class="scroll" ref="{{scRef}}">
+
+        <!-- ================= 組合員メニュー ================= -->
+        <sc-if value="{{isMenu}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap" style="gap: 18px">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px">
+              <div style="font-size: 13px; font-weight: 600; color: #5A6475">天王寺車掌区分会</div>
+              <h2 class="ttl" style="font-size: 26px">どちらの手続きですか？</h2>
+            </div>
+            <div class="cards">
+              <button type="button" class="card" onClick="{{goNew}}">
+                <div style="width: 52px; height: 52px; border-radius: 14px; background: #EEF1FC; color: #1F3FBF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"></circle><path d="M3 20c0-3.3 3.1-6 7-6 1.4 0 2.7.3 3.8.9"></path><path d="M18 14v6"></path><path d="M15 17h6"></path></svg>
+                </div>
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px">
+                  <div style="font-size: 18px; font-weight: 700">新規登録</div>
+                  <div style="font-size: 13px; color: #5A6475; line-height: 1.5">はじめて台帳に登録する方</div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </button>
+              <button type="button" class="card" onClick="{{goVerify}}">
+                <div style="width: 52px; height: 52px; border-radius: 14px; background: #E7F6F0; color: #0F7B5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+                </div>
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px">
+                  <div style="font-size: 18px; font-weight: 700">登録内容の更新</div>
+                  <div style="font-size: 13px; color: #5A6475; line-height: 1.5">住所・電話・家族などが変わった方。申請状況の確認もこちら</div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+              </button>
+            </div>
+            <div class="sec" style="gap: 14px">
+              <div style="font-size: 13px; font-weight: 700; color: #2A3547">反映までの流れ</div>
+              <div class="steps">
+                <div class="step"><div class="dot on">1</div>入力して<br>申請</div>
+                <div class="bar-l"></div>
+                <div class="step"><div class="dot">2</div>役員が<br>内容を確認</div>
+                <div class="bar-l"></div>
+                <div class="step"><div class="dot">3</div>承認されて<br>台帳に反映</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 本人確認（更新） ================= -->
+        <sc-if value="{{isVerify}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap" style="max-width: 520px; gap: 18px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h2 class="ttl">本人確認</h2>
+              <p class="lead">社員番号と生年月日が一致すると、登録内容の更新画面に進みます。</p>
+            </div>
+            <div class="sec">
+              <label class="fld">
+                <span class="lb">社員番号</span>
+                <input class="in" name="code" value="{{v.code}}" onChange="{{onV}}" inputMode="numeric" placeholder="7桁の数字" autocomplete="off" style="letter-spacing: .12em">
+              </label>
+              <div class="fld">
+                <span class="lb">生年月日（西暦）</span>
+                <div class="date">
+                  <input class="in y" name="y" value="{{v.y}}" onChange="{{onV}}" inputMode="numeric" placeholder="1990" aria-label="生年月日の年">
+                  <span>年</span>
+                  <input class="in md" name="m" value="{{v.m}}" onChange="{{onV}}" inputMode="numeric" placeholder="1" aria-label="生年月日の月">
+                  <span>月</span>
+                  <input class="in md" name="d" value="{{v.d}}" onChange="{{onV}}" inputMode="numeric" placeholder="1" aria-label="生年月日の日">
+                  <span>日</span>
+                </div>
+                <span style="font-size: 12px; color: #5A6475">月・日は「1」でも「01」でもOK</span>
+              </div>
+              <sc-if value="{{vErr}}" hint-placeholder-val="{{ false }}">
+                <div class="note red" role="alert">{{vErrText}}</div>
+              </sc-if>
+              <button type="button" class="btn pri" onClick="{{doVerify}}" disabled="{{vLocked}}">確認する</button>
+            </div>
+            <div style="padding: 12px 14px; border-radius: 12px; border: 1px dashed #AEB7C6; font-size: 12.5px; color: #5A6475; line-height: 1.6">試作用の登録済みデータ：社員番号 <b style="color: #0E1726">1234567</b> ／ 生年月日 <b style="color: #0E1726">1990年4月12日</b></div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 新規・更新フォーム ================= -->
+        <sc-if value="{{isForm}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap">
+
+            <sc-if value="{{isNew}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px">
+                <h2 class="ttl">新規登録</h2>
+                <p class="lead">紙の台帳と同じ順番で入力します。数字は半角で入力してください（全角は自動で半角に直します）。</p>
+              </div>
+              <section class="sec">
+                <h3 class="st"><span class="num">0</span>社員番号と生年月日</h3>
+                <label class="fld">
+                  <span class="lb">社員番号<em class="req">必須</em></span>
+                  <input class="in {{bad.employee_code}}" name="employee_code" value="{{f.employee_code}}" onChange="{{onField}}" inputMode="numeric" placeholder="7桁の数字" autocomplete="off" style="letter-spacing: .12em">
+                </label>
+                <div class="fld">
+                  <span class="lb">生年月日（西暦）<em class="req">必須</em></span>
+                  <div class="date">
+                    <input class="in y {{bad.birth}}" name="birth_y" value="{{f.birth_y}}" onChange="{{onField}}" inputMode="numeric" placeholder="1990" aria-label="生年月日の年">
+                    <span>年</span>
+                    <input class="in md {{bad.birth}}" name="birth_m" value="{{f.birth_m}}" onChange="{{onField}}" inputMode="numeric" placeholder="1" aria-label="生年月日の月">
+                    <span>月</span>
+                    <input class="in md {{bad.birth}}" name="birth_d" value="{{f.birth_d}}" onChange="{{onField}}" inputMode="numeric" placeholder="1" aria-label="生年月日の日">
+                    <span>日</span>
+                  </div>
+                </div>
+                <sc-if value="{{idIdle}}" hint-placeholder-val="{{ true }}">
+                  <p style="margin: 0; font-size: 12.5px; color: #5A6475; line-height: 1.6">社員番号と生年月日を入れると、すでに登録されているかを自動で確認します。</p>
+                </sc-if>
+                <sc-if value="{{idDupe}}" hint-placeholder-val="{{ false }}">
+                  <div class="note orange" role="alert" style="flex-direction: column; gap: 12px">
+                    <div style="display: flex; gap: 10px">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg>
+                      <div style="display: flex; flex-direction: column; gap: 4px">
+                        <div style="font-weight: 700; font-size: 15px">登録済みです</div>
+                        <div>この社員番号と生年月日はすでに台帳にあります。変更がある場合は「登録内容の更新」から申請してください。</div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn warn" onClick="{{dupeToUpdate}}">登録内容の更新へ進む</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{idOk}}" hint-placeholder-val="{{ false }}">
+                  <div class="note green" style="align-items: center; font-weight: 600">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+                    未登録です。続けて入力してください。
+                  </div>
+                </sc-if>
+              </section>
+            </sc-if>
+
+            <sc-if value="{{isUpdate}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px">
+                <h2 class="ttl">登録内容の更新</h2>
+                <p class="lead">変わったところだけ直して「確認へ進む」を押してください。</p>
+              </div>
+              <sc-if value="{{hasMyPending}}" hint-placeholder-val="{{ true }}">
+                <div class="note orange" style="align-items: center">
+                  <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+                    <div style="font-size: 12px; font-weight: 700; color: #92400E">申請状況：承認待ち</div>
+                    <div>9月20日の申請を役員が確認中です。新しく申請すると前回分は破棄され、置き換わります。</div>
+                  </div>
+                  <button type="button" class="link" onClick="{{cancelPending}}">取り消す</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{pendingCancelled}}" hint-placeholder-val="{{ false }}">
+                <div class="note" style="background: #EEF0F3; color: #2A3547">9月20日の申請を取り消しました。</div>
+              </sc-if>
+              <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: #0E1A33; color: #fff">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #1F3FBF; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0">{{initial}}</div>
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                  <div style="font-weight: 700">{{fullName}} さん</div>
+                  <div class="num-t" style="font-size: 12.5px; color: #C3CDE6">社員番号 {{f.employee_code}}・{{birthText}}（{{age}}）</div>
+                </div>
+              </div>
+              <p style="margin: 0 4px; font-size: 12px; color: #5A6475">社員番号・生年月日の訂正は役員に連絡してください。</p>
+            </sc-if>
+
+            <sc-if value="{{showForm}}" hint-placeholder-val="{{ false }}">
+              <section class="sec">
+                <h3 class="st"><span class="num">1</span>基本情報</h3>
+                <div class="fld">
+                  <span class="lb">氏名<em class="req">必須</em></span>
+                  <div class="row2">
+                    <input class="in {{bad.name}}" name="sei" value="{{f.sei}}" onChange="{{onField}}" placeholder="姓（山田）" aria-label="姓" autocomplete="off">
+                    <input class="in {{bad.name}}" name="mei" value="{{f.mei}}" onChange="{{onField}}" placeholder="名（太郎）" aria-label="名" autocomplete="off">
+                  </div>
+                </div>
+                <sc-if value="{{has.name}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.name}}</p></sc-if>
+                <div class="fld">
+                  <span class="lb">フリガナ<em class="req">必須</em></span>
+                  <div class="row2">
+                    <input class="in {{bad.kana}}" name="sei_kana" value="{{f.sei_kana}}" onChange="{{onField}}" placeholder="セイ（ヤマダ）" aria-label="セイ" autocomplete="off">
+                    <input class="in {{bad.kana}}" name="mei_kana" value="{{f.mei_kana}}" onChange="{{onField}}" placeholder="メイ（タロウ）" aria-label="メイ" autocomplete="off">
+                  </div>
+                </div>
+                <sc-if value="{{has.kana}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.kana}}</p></sc-if>
+                <div class="fld">
+                  <span class="lb">性別<em class="req">必須</em></span>
+                  <div class="seg">
+                    <sc-for list="{{genderOpts}}" as="o" hint-placeholder-count="2">
+                      <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <sc-if value="{{has.gender}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.gender}}</p></sc-if>
+                <label class="fld">
+                  <span class="lb">職名<em class="req">必須</em></span>
+                  <input class="in {{bad.job_title}}" name="job_title" value="{{f.job_title}}" onChange="{{onField}}" placeholder="例：車掌" autocomplete="off">
+                </label>
+                <sc-if value="{{has.job_title}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.job_title}}</p></sc-if>
+                <div class="fld">
+                  <span class="lb">契約社員入社年月日<em class="opt">該当者のみ</em></span>
+                  <div class="date">
+                    <input class="in y {{bad.contract}}" name="contract_y" value="{{f.contract_y}}" onChange="{{onField}}" inputMode="numeric" placeholder="2010" aria-label="契約社員入社の年">
+                    <span>年</span>
+                    <input class="in md {{bad.contract}}" name="contract_m" value="{{f.contract_m}}" onChange="{{onField}}" inputMode="numeric" placeholder="4" aria-label="契約社員入社の月">
+                    <span>月</span>
+                    <input class="in md {{bad.contract}}" name="contract_d" value="{{f.contract_d}}" onChange="{{onField}}" inputMode="numeric" placeholder="1" aria-label="契約社員入社の日">
+                    <span>日</span>
+                  </div>
+                </div>
+                <sc-if value="{{has.contract}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.contract}}</p></sc-if>
+                <div class="fld">
+                  <span class="lb">正社員入社年月日<em class="opt">任意</em></span>
+                  <div class="date">
+                    <input class="in y {{bad.regular}}" name="regular_y" value="{{f.regular_y}}" onChange="{{onField}}" inputMode="numeric" placeholder="2012" aria-label="正社員入社の年">
+                    <span>年</span>
+                    <input class="in md {{bad.regular}}" name="regular_m" value="{{f.regular_m}}" onChange="{{onField}}" inputMode="numeric" placeholder="4" aria-label="正社員入社の月">
+                    <span>月</span>
+                    <input class="in md {{bad.regular}}" name="regular_d" value="{{f.regular_d}}" onChange="{{onField}}" inputMode="numeric" placeholder="1" aria-label="正社員入社の日">
+                    <span>日</span>
+                  </div>
+                </div>
+                <sc-if value="{{has.regular}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.regular}}</p></sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">2</span>電話番号</h3>
+                <label class="fld">
+                  <span class="lb">携帯<em class="req">必須</em></span>
+                  <input class="in {{bad.tel_mobile}}" name="tel_mobile" value="{{f.tel_mobile}}" onChange="{{onField}}" inputMode="tel" placeholder="090-0000-0000" autocomplete="off">
+                </label>
+                <sc-if value="{{has.tel_mobile}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.tel_mobile}}</p></sc-if>
+                <label class="fld">
+                  <span class="lb">自宅<em class="opt">任意</em></span>
+                  <input class="in {{bad.tel_home}}" name="tel_home" value="{{f.tel_home}}" onChange="{{onField}}" inputMode="tel" placeholder="06-0000-0000" autocomplete="off">
+                </label>
+                <sc-if value="{{has.tel_home}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.tel_home}}</p></sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">3</span>現住所</h3>
+                <div class="fld">
+                  <span class="lb">郵便番号<em class="req">必須</em></span>
+                  <div style="display: flex; gap: 8px">
+                    <input class="in {{bad.zip}}" name="zip" value="{{f.zip}}" onChange="{{onField}}" inputMode="numeric" placeholder="0000000" autocomplete="off" aria-label="現住所の郵便番号" style="width: 150px; flex-shrink: 0; letter-spacing: .06em">
+                    <button type="button" class="btn sec" style="height: 48px; font-size: 14px; padding: 0 14px">住所を自動入力</button>
+                  </div>
+                  <span style="font-size: 12px; color: #5A6475">数字7桁だけでOK（ハイフンは自動で入ります）</span>
+                </div>
+                <sc-if value="{{has.zip}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.zip}}</p></sc-if>
+                <label class="fld">
+                  <span class="lb">住所<em class="req">必須</em></span>
+                  <input class="in {{bad.address}}" name="address" value="{{f.address}}" onChange="{{onField}}" placeholder="都道府県から建物名・部屋番号まで" autocomplete="off">
+                </label>
+                <sc-if value="{{has.address}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.address}}</p></sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">4</span>実家住所<em class="opt">任意</em></h3>
+                <div class="fld">
+                  <span class="lb">郵便番号</span>
+                  <div style="display: flex; gap: 8px">
+                    <input class="in {{bad.family_zip}}" name="family_zip" value="{{f.family_zip}}" onChange="{{onField}}" inputMode="numeric" placeholder="0000000" autocomplete="off" aria-label="実家の郵便番号" style="width: 150px; flex-shrink: 0; letter-spacing: .06em">
+                    <button type="button" class="btn sec" style="height: 48px; font-size: 14px; padding: 0 14px">住所を自動入力</button>
+                  </div>
+                </div>
+                <sc-if value="{{has.family_zip}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.family_zip}}</p></sc-if>
+                <label class="fld">
+                  <span class="lb">住所</span>
+                  <input class="in" name="family_address" value="{{f.family_address}}" onChange="{{onField}}" placeholder="都道府県から" autocomplete="off">
+                </label>
+                <label class="fld">
+                  <span class="lb">電話</span>
+                  <input class="in {{bad.family_tel}}" name="family_tel" value="{{f.family_tel}}" onChange="{{onField}}" inputMode="tel" placeholder="0000-00-0000" autocomplete="off">
+                </label>
+                <sc-if value="{{has.family_tel}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.family_tel}}</p></sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">5</span>最寄駅</h3>
+                <div class="fld">
+                  <span class="lb">自宅<em class="req">必須</em></span>
+                  <div class="row2">
+                    <input class="in {{bad.station}}" name="station_home_line" value="{{f.station_home_line}}" onChange="{{onField}}" placeholder="〇〇線" aria-label="自宅最寄駅の路線" autocomplete="off">
+                    <input class="in {{bad.station}}" name="station_home" value="{{f.station_home}}" onChange="{{onField}}" placeholder="〇〇駅" aria-label="自宅最寄駅" autocomplete="off">
+                  </div>
+                </div>
+                <sc-if value="{{has.station}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.station}}</p></sc-if>
+                <div class="fld">
+                  <span class="lb">実家<em class="opt">任意</em></span>
+                  <div class="row2">
+                    <input class="in" name="station_family_line" value="{{f.station_family_line}}" onChange="{{onField}}" placeholder="〇〇線" aria-label="実家最寄駅の路線" autocomplete="off">
+                    <input class="in" name="station_family" value="{{f.station_family}}" onChange="{{onField}}" placeholder="〇〇駅" aria-label="実家最寄駅" autocomplete="off">
+                  </div>
+                </div>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">6</span>ご家族構成<span style="margin-left: auto; font-family: 'IBM Plex Sans JP', sans-serif; font-size: 13px; font-weight: 600; color: #5A6475">{{famCount}} / 10人</span></h3>
+                <sc-if value="{{noFamily}}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; font-size: 13px; color: #5A6475">登録する家族がいない場合はそのまま次へ進んでください。</p>
+                </sc-if>
+                <sc-for list="{{family}}" as="m" hint-placeholder-count="1">
+                  <div class="fam">
+                    <div style="display: flex; align-items: center; justify-content: space-between">
+                      <span style="font-size: 14px; font-weight: 700">家族 {{m.idx}}</span>
+                      <button type="button" class="del" onClick="{{m.del}}" aria-label="家族 {{m.idx}} を削除">削除</button>
+                    </div>
+                    <div class="fld">
+                      <span class="lb">氏名</span>
+                      <div class="row2">
+                        <input class="in" name="sei" value="{{m.sei}}" onChange="{{m.on}}" placeholder="姓" aria-label="家族の姓" autocomplete="off">
+                        <input class="in" name="mei" value="{{m.mei}}" onChange="{{m.on}}" placeholder="名" aria-label="家族の名" autocomplete="off">
+                      </div>
+                    </div>
+                    <div class="fld">
+                      <span class="lb">フリガナ</span>
+                      <div class="row2">
+                        <input class="in" name="sei_kana" value="{{m.sei_kana}}" onChange="{{m.on}}" placeholder="セイ" aria-label="家族のセイ" autocomplete="off">
+                        <input class="in" name="mei_kana" value="{{m.mei_kana}}" onChange="{{m.on}}" placeholder="メイ" aria-label="家族のメイ" autocomplete="off">
+                      </div>
+                    </div>
+                    <div class="fld">
+                      <span class="lb">生年月日</span>
+                      <div class="date">
+                        <input class="in y" name="y" value="{{m.y}}" onChange="{{m.on}}" inputMode="numeric" placeholder="1992" aria-label="家族の生年月日の年">
+                        <span>年</span>
+                        <input class="in md" name="m" value="{{m.m}}" onChange="{{m.on}}" inputMode="numeric" placeholder="1" aria-label="家族の生年月日の月">
+                        <span>月</span>
+                        <input class="in md" name="d" value="{{m.d}}" onChange="{{m.on}}" inputMode="numeric" placeholder="1" aria-label="家族の生年月日の日">
+                        <span>日</span>
+                      </div>
+                    </div>
+                    <div class="row2">
+                      <label class="fld">
+                        <span class="lb">続柄</span>
+                        <select class="in" name="relationship" value="{{m.relationship}}" onChange="{{m.on}}">
+                          <option value="">選択</option>
+                          <option value="妻">妻</option>
+                          <option value="夫">夫</option>
+                          <option value="子">子</option>
+                          <option value="父">父</option>
+                          <option value="母">母</option>
+                          <option value="義父">義父</option>
+                          <option value="義母">義母</option>
+                          <option value="その他">その他</option>
+                        </select>
+                      </label>
+                      <div class="fld">
+                        <span class="lb">性別</span>
+                        <div class="seg">
+                          <sc-for list="{{m.genders}}" as="o" hint-placeholder-count="2">
+                            <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="fld">
+                      <span class="lb">同居・別居</span>
+                      <div class="seg">
+                        <sc-for list="{{m.lives}}" as="o" hint-placeholder-count="2">
+                          <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <sc-if value="{{m.hasErr}}" hint-placeholder-val="{{ false }}"><p class="er">{{m.err}}</p></sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{canAddFam}}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="add" onClick="{{addFam}}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                    家族を追加
+                  </button>
+                </sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">7</span>共済加入状況</h3>
+                <sc-for list="{{kyosaiOpts}}" as="k" hint-placeholder-count="4">
+                  <div class="fld">
+                    <span class="lb">{{k.label}}<em class="req">必須</em></span>
+                    <div class="seg">
+                      <sc-for list="{{k.opts}}" as="o" hint-placeholder-count="3">
+                        <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{has.kyosai}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.kyosai}}</p></sc-if>
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">8</span>前職場<em class="opt">任意</em></h3>
+                <input class="in" name="prev_workplace" value="{{f.prev_workplace}}" onChange="{{onField}}" placeholder="例：〇〇車掌区" aria-label="前職場" autocomplete="off">
+              </section>
+
+              <section class="sec">
+                <h3 class="st"><span class="num">9</span>組合役員経験</h3>
+                <div class="seg">
+                  <sc-for list="{{officerOpts}}" as="o" hint-placeholder-count="2">
+                    <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{isOfficer}}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 14px; padding: 14px; border-radius: 12px; background: #F6F7FB">
+                    <div class="fld">
+                      <span class="lb">時期</span>
+                      <div class="seg">
+                        <sc-for list="{{whenOpts}}" as="o" hint-placeholder-count="2">
+                          <button type="button" class="sg {{o.cls}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <label class="fld">
+                      <span class="lb">所属箇所と役職</span>
+                      <input class="in" name="officer_detail" value="{{f.officer_detail}}" onChange="{{onField}}" placeholder="例：〇〇分会 書記長" autocomplete="off">
+                    </label>
+                  </div>
+                </sc-if>
+                <sc-if value="{{has.officer}}" hint-placeholder-val="{{ false }}"><p class="er">{{err.officer}}</p></sc-if>
+              </section>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ================= 管理：トースト ================= -->
+        <sc-if value="{{showToast}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-admin" style="padding-bottom: 0">
+            <div class="toast" role="status">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              {{toast}}
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 管理：台帳一覧 ================= -->
+        <sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-admin" style="gap: 20px">
+            <div class="stats">
+              <div class="stat"><div class="k">登録者数</div><div style="font-size: {{statSize}}; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; font-family: 'IBM Plex Sans JP', sans-serif; color: #0E1726">{{total}}<span style="font-size: 13px; font-weight: 600; color: #5A6475; margin-left: 3px">人</span></div></div>
+              <button type="button" class="stat dark" onClick="{{toReq}}"><div class="k">承認待ち</div><div style="font-size: {{statSize}}; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; font-family: 'IBM Plex Sans JP', sans-serif; color: #FFFFFF">{{pendingCount}}<span style="font-size: 13px; font-weight: 600; color: #C3CDE6; margin-left: 3px">件 →</span></div></button>
+              <div class="stat"><div class="k">今月の更新</div><div style="font-size: {{statSize}}; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; font-family: 'IBM Plex Sans JP', sans-serif; color: #0E1726">{{monthCount}}<span style="font-size: 13px; font-weight: 600; color: #5A6475; margin-left: 3px">件</span></div></div>
+            </div>
+            <div class="panel">
+              <div class="toolbar">
+                <div class="chips" role="group" aria-label="フリガナの行で絞り込み">
+                  <sc-for list="{{chips}}" as="c" hint-placeholder-count="11">
+                    <button type="button" class="chip {{c.cls}}" onClick="{{c.pick}}" disabled="{{c.empty}}" aria-pressed="{{c.on}}">{{c.label}}</button>
+                  </sc-for>
+                </div>
+                <div class="srch-w">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5A6475" stroke-width="2" stroke-linecap="round" style="position: absolute; left: 13px; top: 13px"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg>
+                  <input class="srch" type="search" value="{{q}}" onChange="{{onQ}}" placeholder="氏名・フリガナ・社員番号で検索" aria-label="検索">
+                </div>
+              </div>
+              <sc-if value="{{wide}}" hint-placeholder-val="{{ true }}">
+                <div class="tr hd">
+                  <div class="th">社員番号</div><div class="th">氏名</div><div class="th">フリガナ</div><div class="th">年齢</div><div class="th">更新日</div><div></div>
+                </div>
+                <sc-for list="{{list}}" as="m" hint-placeholder-count="10">
+                  <div class="tr">
+                    <div class="num-t" style="font-size: 14px; color: #2A3547; letter-spacing: .04em">{{m.code}}</div>
+                    <div><button type="button" class="nm" onClick="{{m.open}}">{{m.name}}</button></div>
+                    <div style="font-size: 13.5px; color: #5A6475">{{m.kana}}</div>
+                    <div class="num-t" style="font-size: 14px">{{m.age}}</div>
+                    <div class="num-t" style="font-size: 14px; color: #2A3547">{{m.updated}}</div>
+                    <button type="button" class="icb" onClick="{{m.open}}" aria-label="{{m.name}} の台帳を開く" style="width: 36px; height: 36px; color: #9AA3B2">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+                    </button>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{narrow}}" hint-placeholder-val="{{ false }}">
+                <sc-for list="{{list}}" as="m" hint-placeholder-count="8">
+                  <button type="button" class="mrow" onClick="{{m.open}}">
+                    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                      <div style="display: flex; align-items: baseline; gap: 8px">
+                        <span style="font-size: 16px; font-weight: 700">{{m.name}}</span>
+                        <span style="font-size: 12px; color: #5A6475">{{m.kana}}</span>
+                      </div>
+                      <div class="num-t" style="font-size: 12.5px; color: #5A6475">{{m.code}}・{{m.age}}・更新 {{m.updated}}</div>
+                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA3B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M9 6l6 6-6 6"></path></svg>
+                  </button>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{listEmpty}}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 48px 20px; text-align: center; color: #5A6475; font-size: 14px; border-top: 1px solid #EEF0F3">該当する組合員がいません</div>
+              </sc-if>
+              <div class="pfoot"><span>{{listSummary}}</span><span>1 / 1 ページ</span></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 管理：承認待ち ================= -->
+        <sc-if value="{{isReq}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-admin">
+            <div class="reqgrid">
+              <sc-if value="{{showReqList}}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: 10px">
+                  <div style="font-size: 13px; font-weight: 700; color: #5A6475; padding: 0 4px">承認待ち {{pendingCount}} 件（古い順）</div>
+                  <sc-for list="{{reqs}}" as="r" hint-placeholder-count="3">
+                    <button type="button" class="rq {{r.cls}}" onClick="{{r.pick}}">
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span class="tag {{r.tagCls}}">{{r.typeLabel}}</span>
+                        <span class="num-t" style="font-size: 12px; color: #5A6475">{{r.id}}</span>
+                        <span class="num-t" style="margin-left: auto; font-size: 12px; color: #5A6475">{{r.at}}</span>
+                      </div>
+                      <div style="font-size: 16px; font-weight: 700">{{r.name}}</div>
+                      <div style="font-size: 12.5px; color: #5A6475">{{r.summary}}</div>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{noReqs}}" hint-placeholder-val="{{ false }}">
+                    <div style="padding: 32px 16px; border-radius: 12px; background: #fff; border: 1px dashed #D5DAE1; text-align: center; font-size: 14px; color: #5A6475">承認待ちの申請はありません</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{showReqDetail}}" hint-placeholder-val="{{ true }}">
+                <div class="panel">
+                  <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                      <span class="tag {{sel.tagCls}}">{{sel.typeLabel}}</span>
+                      <span class="num-t" style="font-size: 12.5px; color: #5A6475">{{sel.id}}・{{sel.at}} 申請</span>
+                      <sc-if value="{{sel.superseded}}" hint-placeholder-val="{{ false }}"><span class="tag warn">古い申請 1 件を置き換え済み</span></sc-if>
+                    </div>
+                    <div class="h" style="font-size: 22px; font-weight: 900">{{sel.name}}</div>
+                  </div>
+                  <div class="dr hd" style="background: #F8F9FC; padding-top: 10px; padding-bottom: 10px">
+                    <div class="th">項目</div><div class="th">変更前</div><div class="th">変更後</div>
+                  </div>
+                  <sc-for list="{{sel.diff}}" as="d" hint-placeholder-count="3">
+                    <div class="dr">
+                      <div style="font-weight: 600; color: #2A3547; font-size: 13px">{{d.label}}</div>
+                      <div class="bf" style="color: #8A93A3; word-break: break-all">{{d.before}}</div>
+                      <div style="word-break: break-all"><span class="hlv">{{d.after}}</span></div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{rejecting}}" hint-placeholder-val="{{ false }}">
+                    <div style="padding: 16px 20px; border-top: 1px solid #EEF0F3; display: flex; flex-direction: column; gap: 8px; background: #FFFBFA">
+                      <label for="reason" style="font-size: 13px; font-weight: 700">却下の理由（本人の申請状況に表示されます）</label>
+                      <textarea id="reason" class="ta" value="{{reason}}" onChange="{{onReason}}" placeholder="例：住所の番地が確認できません。もう一度入力してください。"></textarea>
+                    </div>
+                  </sc-if>
+                  <div style="padding: 16px 20px; border-top: 1px solid #EEF0F3; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap">
+                    <sc-if value="{{notRejecting}}" hint-placeholder-val="{{ true }}">
+                      <button type="button" class="btn dng sm" onClick="{{startReject}}">却下する</button>
+                      <button type="button" class="btn ok sm" onClick="{{approve}}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+                        承認して反映
+                      </button>
+                    </sc-if>
+                    <sc-if value="{{rejecting}}" hint-placeholder-val="{{ false }}">
+                      <button type="button" class="btn sec sm" onClick="{{stopReject}}">やめる</button>
+                      <button type="button" class="btn dngf sm" onClick="{{reject}}">却下を確定</button>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 管理：行動ログ ================= -->
+        <sc-if value="{{isLog}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-admin">
+            <div class="panel">
+              <div class="toolbar">
+                <div class="chips" role="group" aria-label="操作の種類で絞り込み">
+                  <sc-for list="{{logChips}}" as="c" hint-placeholder-count="6">
+                    <button type="button" class="chip {{c.cls}}" onClick="{{c.pick}}" aria-pressed="{{c.on}}">{{c.label}}</button>
+                  </sc-for>
+                </div>
+                <div class="srch-w" style="display: flex; align-items: center; gap: 8px">
+                  <label for="period" style="font-size: 13px; font-weight: 600; color: #5A6475">期間</label>
+                  <select id="period" class="sel">
+                    <option>過去7日</option>
+                    <option>今日</option>
+                    <option>過去30日</option>
+                    <option>すべて</option>
+                  </select>
+                </div>
+              </div>
+              <sc-if value="{{wide}}" hint-placeholder-val="{{ true }}">
+                <div class="lr hd">
+                  <div class="th">日時</div><div class="th">権限</div><div class="th">操作者</div><div class="th">操作</div><div class="th">対象</div><div class="th">詳細（項目名のみ）</div>
+                </div>
+                <sc-for list="{{logs}}" as="l" hint-placeholder-count="10">
+                  <div class="lr">
+                    <div class="num-t" style="color: #2A3547">{{l.at}}</div>
+                    <div style="color: #5A6475">{{l.role}}</div>
+                    <div class="num-t">{{l.actor}}</div>
+                    <div><span class="tag {{l.cls}}">{{l.label}}</span></div>
+                    <div style="font-weight: 600">{{l.target}}</div>
+                    <div style="color: #5A6475">{{l.detail}}</div>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{narrow}}" hint-placeholder-val="{{ false }}">
+                <sc-for list="{{logs}}" as="l" hint-placeholder-count="8">
+                  <div class="lcard">
+                    <div style="display: flex; align-items: center; gap: 8px">
+                      <span class="tag {{l.cls}}">{{l.label}}</span>
+                      <span style="font-weight: 700">{{l.target}}</span>
+                      <span class="num-t" style="margin-left: auto; font-size: 12px; color: #5A6475">{{l.at}}</span>
+                    </div>
+                    <div style="font-size: 12.5px; color: #5A6475">{{l.role}}：{{l.actor}}　{{l.detail}}</div>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <div class="pfoot"><span>{{logSummary}}</span><span>ログは追記のみ（編集・削除不可）</span></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 管理：ゴミ箱 ================= -->
+        <sc-if value="{{isTrash}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-admin">
+            <div class="note blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 7.5v.01"></path></svg>
+              <span>削除した台帳は家族情報とあわせてここに残ります。［復元］で元に戻せます。［完全削除］は削除から90日たったものだけ実行でき、実行前に自動でバックアップを取ります。</span>
+            </div>
+            <div class="panel">
+              <sc-for list="{{trash}}" as="t" hint-placeholder-count="2">
+                <div style="padding: 16px 20px; border-top: 1px solid #EEF0F3; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px">
+                  <div style="flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                    <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+                      <span style="font-size: 16px; font-weight: 700">{{t.name}}</span>
+                      <span style="font-size: 12px; color: #5A6475">{{t.kana}}</span>
+                    </div>
+                    <div class="num-t" style="font-size: 12.5px; color: #5A6475">社員番号 {{t.code}}・削除 {{t.deletedAt}}（{{t.by}}）</div>
+                    <div style="font-size: 12px; color: {{t.purgeColor}}">{{t.purgeText}}</div>
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-left: auto">
+                    <button type="button" class="btn sec sm" onClick="{{t.restore}}">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6"></path><path d="M4 4v4h4"></path></svg>
+                      復元
+                    </button>
+                    <button type="button" class="btn dng sm" onClick="{{t.askPurge}}" disabled="{{t.locked}}" style="{{t.purgeStyle}}">完全削除</button>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{trashEmpty}}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 48px 20px; text-align: center; color: #5A6475; font-size: 14px">ゴミ箱は空です</div>
+              </sc-if>
+              <div class="pfoot"><span>{{trashCount}} 件</span><span>削除・復元・完全削除は行動ログに記録されます</span></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ================= 台帳シート（確認画面・管理の台帳表示） ================= -->
+        <sc-if value="{{showSheet}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap w-sheet">
+            <sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px">
+                <h2 class="ttl">内容の確認</h2>
+                <p class="lead">{{confirmLead}}</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{narrow}}" hint-placeholder-val="{{ false }}">
+              <div class="seg" role="group" aria-label="表示の切り替え" style="padding: 4px; background: #EEF0F3; border-radius: 12px">
+                <button type="button" class="sg {{viewListCls}}" aria-pressed="{{isListView}}" onClick="{{toListView}}" style="border: 0">読みやすい表示</button>
+                <button type="button" class="sg {{viewSheetCls}}" aria-pressed="{{isSheetView}}" onClick="{{toSheetView}}" style="border: 0">台帳の形</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{showZoomRow}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+                <span style="font-size: 12px; color: #5A6475">{{zoomHint}}</span>
+                <button type="button" class="zoom" onClick="{{toggleZoom}}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path><path d="M8.5 11h5"></path></svg>
+                  {{zoomLabel}}
+                </button>
+              </div>
+            </sc-if>
+            <div class="sheet-layout {{sideCls}}">
+              <sc-if value="{{showReadable}}" hint-placeholder-val="{{ false }}">
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 12px">
+                  <div style="padding: 14px 16px; border-radius: 16px; background: #0E1A33; color: #fff; display: flex; flex-direction: column; gap: 4px">
+                    <div style="font-size: 11.5px; color: #9FB0D9; letter-spacing: .06em">大阪地方本部　天王寺支部　天王寺車掌区分会</div>
+                    <div class="h" style="font-size: 20px; font-weight: 900">{{p.name}}</div>
+                    <div class="num-t" style="font-size: 12.5px; color: #C3CDE6">{{p.kana}}・社員番号 {{p.code}}</div>
+                  </div>
+                  <sc-for list="{{readable}}" as="sc" hint-placeholder-count="5">
+                    <section class="sec" style="gap: 0; padding: 4px 16px 6px">
+                      <h3 class="st" style="font-size: 15px; padding: 12px 0 8px">{{sc.title}}</h3>
+                      <sc-for list="{{sc.rows}}" as="r" hint-placeholder-count="3">
+                        <div style="display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; padding: 10px 8px; margin: 0 -8px; border-top: 1px solid #EEF0F3; border-radius: 6px; background: {{r.bg}}">
+                          <div style="font-size: 12.5px; font-weight: 600; color: #5A6475; line-height: 1.5">{{r.label}}</div>
+                          <div style="font-size: 14.5px; font-weight: 500; line-height: 1.5; word-break: break-all; white-space: pre-line">{{r.value}}</div>
+                        </div>
+                      </sc-for>
+                    </section>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{showSheetHost}}" hint-placeholder-val="{{ true }}">
+              <div class="sheet-host" ref="{{hostRef}}">
+                <div style="width: {{sheetW}}px; height: {{sheetH}}px; overflow: hidden">
+                  <div class="sheet" style="transform: scale({{scale}})">
+                    <div style="text-align: center; font-size: 19px; font-weight: 700; letter-spacing: .06em">西日本旅客鉄道労働組合（JR西労組）組合員台帳</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12.5px">
+                      <div style="letter-spacing: .06em">大阪地方本部　天王寺支部　天王寺車掌区分会</div>
+                      <div><span class="v">{{p.madeY}}</span> 年 <span class="v">{{p.madeM}}</span> 月 <span class="v">{{p.madeD}}</span> 日 作成</div>
+                    </div>
+
+                    <div class="g" style="grid-template-columns: 66px minmax(0, 1fr) 42px 50px 126px 84px 128px">
+                      <div class="c lab" style="height: 26px">フリガナ</div>
+                      <div class="c v {{h.kana}}" style="font-size: 12px; letter-spacing: .08em">{{p.kana}}</div>
+                      <div class="c lab">性別</div>
+                      <div class="c lab">年齢</div>
+                      <div class="c lab">生年月日</div>
+                      <div class="c lab">職名</div>
+                      <div class="c lab" style="font-size: 10px; letter-spacing: 0">契約社員入社年月日</div>
+
+                      <div class="c lab" style="height: 52px">氏　名</div>
+                      <div class="c v {{h.name}}" style="font-size: 22px; font-weight: 700; letter-spacing: .08em">{{p.name}}</div>
+                      <div class="c v {{h.gender}}" style="justify-content: center">{{p.gender}}</div>
+                      <div class="c v {{h.birth}}" style="justify-content: center">{{p.age}}</div>
+                      <div class="c v {{h.birth}}" style="justify-content: center">{{p.birth}}</div>
+                      <div class="c v {{h.job}}" style="justify-content: center">{{p.job}}</div>
+                      <div class="c v {{h.contract}}" style="justify-content: center">{{p.contract}}</div>
+
+                      <div class="c lab" style="height: 36px">電話番号</div>
+                      <div class="c {{h.tel}}" style="grid-column: 2 / 7; gap: 10px">
+                        <span style="font-size: 11px">自宅</span><span class="v" style="width: 170px">{{p.telHome}}</span>
+                        <span style="font-size: 11px">携帯</span><span class="v">{{p.telMobile}}</span>
+                      </div>
+                      <div class="c lab" style="font-size: 10px; letter-spacing: 0">正社員入社年月日</div>
+
+                      <div class="c lab" style="height: 56px">現住所</div>
+                      <div class="c {{h.addr}}" style="grid-column: 2 / 7; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px">
+                        <span style="font-size: 11px">〒 <span class="v">{{p.zip}}</span></span>
+                        <span class="v" style="font-size: 13px">{{p.address}}</span>
+                      </div>
+                      <div class="c v {{h.regular}}" style="justify-content: center">{{p.regular}}</div>
+
+                      <div class="c lab" style="height: 56px">実家住所</div>
+                      <div class="c {{h.faddr}}" style="grid-column: 2 / 6; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px">
+                        <span style="font-size: 11px">〒 <span class="v">{{p.fzip}}</span></span>
+                        <span class="v" style="font-size: 13px">{{p.faddress}}</span>
+                      </div>
+                      <div class="c {{h.ftel}}" style="grid-column: 6 / 8; gap: 8px">
+                        <span style="font-size: 11px">電話</span><span class="v">{{p.ftel}}</span>
+                      </div>
+
+                      <div class="c lab" style="height: 44px">社員コード</div>
+                      <div class="c v {{h.code}}" style="font-size: 14px; letter-spacing: .14em">{{p.code}}</div>
+                      <div class="c lab" style="grid-column: 3 / 5">最寄駅</div>
+                      <div class="c {{h.st}}" style="grid-column: 5 / 8; gap: 6px; font-size: 11.5px; flex-wrap: wrap">
+                        <span>自宅</span><span class="v">{{p.stHomeLine}}</span><span>線</span><span class="v">{{p.stHome}}</span><span>駅</span>
+                        <span style="margin-left: 10px">実家</span><span class="v">{{p.stFamLine}}</span><span>線</span><span class="v">{{p.stFam}}</span><span>駅</span>
+                      </div>
+                    </div>
+
+                    <div class="g" style="grid-template-columns: minmax(0, 1fr) 84px 32px 38px 34px minmax(0, 1fr) 84px 32px 38px 34px">
+                      <div class="c lab" style="grid-column: 1 / 11; height: 28px; font-size: 12.5px; letter-spacing: .6em">ご家族構成</div>
+                      <div class="c lab" style="height: 24px">氏　名</div><div class="c lab">生年月日</div><div class="c lab">性別</div><div class="c lab">続柄</div><div class="c lab">同別</div>
+                      <div class="c lab">氏　名</div><div class="c lab">生年月日</div><div class="c lab">性別</div><div class="c lab">続柄</div><div class="c lab">同別</div>
+                      <sc-for list="{{famCells}}" as="x" hint-placeholder-count="10">
+                        <div class="c {{x.hl}}" style="height: 50px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px">
+                          <span style="font-size: 9.5px">カナ <span class="v" style="font-size: 10px">{{x.kana}}</span></span>
+                          <span class="v" style="font-size: 13.5px">{{x.name}}</span>
+                        </div>
+                        <div class="c v {{x.hl}}" style="justify-content: center; font-size: 10.5px; text-align: center">{{x.birth}}</div>
+                        <div class="c v {{x.hl}}" style="justify-content: center">{{x.gender}}</div>
+                        <div class="c v {{x.hl}}" style="justify-content: center">{{x.rel}}</div>
+                        <div class="c v {{x.hl}}" style="justify-content: center">{{x.live}}</div>
+                      </sc-for>
+                    </div>
+
+                    <div class="g" style="grid-template-columns: 110px minmax(0, 1fr) 150px minmax(0, 1fr)">
+                      <sc-for list="{{kyosaiCells}}" as="k" hint-placeholder-count="4">
+                        <div class="c lab" style="height: 40px">{{k.label}}</div>
+                        <div class="c {{k.hl}}" style="justify-content: center; gap: 2px; font-size: 12px">
+                          <span class="mk {{k.a}}">加入済</span>・<span class="mk {{k.b}}">未加入</span>・<span class="mk {{k.c}}">不明</span>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div class="g" style="grid-template-columns: 110px minmax(0, 1fr)">
+                      <div class="c lab" style="height: 44px">前職場</div>
+                      <div class="c v {{h.prev}}">{{p.prev}}</div>
+                      <div class="c lab" style="height: 56px">組合役員経験</div>
+                      <div class="c {{h.off}}" style="gap: 4px; font-size: 12px; flex-wrap: wrap">
+                        <span class="mk {{p.offNo}}">無</span>・<span class="mk {{p.offYes}}">有</span>
+                        <span style="margin: 0 4px">→</span>
+                        <span class="mk {{p.offPast}}">以前</span>・<span class="mk {{p.offNow}}">現在</span>
+                        <span style="margin-left: 8px">（所属箇所と役職）</span><span class="v" style="font-size: 13px">{{p.offDetail}}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              </sc-if>
+
+              <sc-if value="{{isLedger}}" hint-placeholder-val="{{ false }}">
+                <div class="sidep">
+                  <div class="sbox">
+                    <div style="font-size: 13px; font-weight: 700">登録情報</div>
+                    <div class="kv"><span>状態</span><span style="color: #0B5E48; font-weight: 700">登録済み</span></div>
+                    <div class="kv"><span>最終更新</span><span class="num-t">{{p.updatedAt}}</span></div>
+                    <div class="kv"><span>更新者</span><span>admin（承認）</span></div>
+                  </div>
+                  <div class="sbox">
+                    <div style="display: flex; align-items: center; justify-content: space-between">
+                      <div style="font-size: 13px; font-weight: 700">変更履歴</div>
+                      <span style="font-size: 12px; color: #5A6475">以前の版に戻せます</span>
+                    </div>
+                    <sc-for list="{{history}}" as="hs" hint-placeholder-count="3">
+                      <div style="display: flex; gap: 12px; align-items: flex-start">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #1F3FBF; margin-top: 6px; flex-shrink: 0"></div>
+                        <div style="display: flex; flex-direction: column; gap: 2px">
+                          <div class="num-t" style="font-size: 13px; font-weight: 600">{{hs.at}}</div>
+                          <div style="font-size: 12.5px; color: #5A6475">{{hs.what}}</div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div class="caution">この画面を開いたことは行動ログに記録されます。印刷物の取り扱いに注意してください。</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{noChanges}}" hint-placeholder-val="{{ false }}">
+                <div class="note red">変更がありません。「修正する」から戻って変更してください。</div>
+              </sc-if>
+              <div class="note blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 7.5v.01"></path></svg>
+                <span>内容に間違いがなければ「この内容で申請する」を押してください。申請後に間違いに気づいた場合は、もう一度申請すれば前回の申請は破棄され、新しい内容に更新されます。</span>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ================= 申請完了 ================= -->
+        <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+          <div class="wrap" style="max-width: 520px; padding-top: 56px; align-items: center; text-align: center; gap: 18px">
+            <div style="width: 84px; height: 84px; border-radius: 50%; background: #E7F6F0; display: flex; align-items: center; justify-content: center">
+              <div style="width: 60px; height: 60px; border-radius: 50%; background: #0F7B5F; display: flex; align-items: center; justify-content: center">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              </div>
+            </div>
+            <h2 class="ttl" style="font-size: 26px">申請しました</h2>
+            <p class="lead" style="font-size: 14px">役員が内容を確認し、承認されると台帳に反映されます。</p>
+            <div style="width: 100%; padding: 16px; border-radius: 14px; background: #fff; border: 1px solid #E3E6EB; display: flex; justify-content: space-between; align-items: center">
+              <span style="font-size: 13px; color: #5A6475">受付番号</span>
+              <span class="num-t" style="font-size: 18px; font-weight: 700; letter-spacing: .06em">{{reqNo}}</span>
+            </div>
+            <div class="note orange" style="text-align: left">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><path d="M4 12a8 8 0 1 0 2.3-5.6"></path><path d="M4 4v4h4"></path></svg>
+              <span>間違えた場合は、もう一度申請してください。前回の申請は破棄され、新しい内容に更新されます（役員が承認する前まで）。</span>
+            </div>
+            <button type="button" class="btn pri full" onClick="{{goMenu}}">メニューへ戻る</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ================= 下部バー ================= -->
+      <sc-if value="{{showFormBar}}" hint-placeholder-val="{{ false }}">
+        <div class="bbar">
+          <div class="bbar-in">
+            <div style="flex-grow: 1; font-size: 12.5px; line-height: 1.4; color: {{barColor}}">{{barText}}</div>
+            <button type="button" class="btn pri" onClick="{{toConfirm}}" style="flex-shrink: 0">確認へ進む</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+        <div class="bbar">
+          <div class="bbar-in" style="display: grid; grid-template-columns: 1fr 2fr">
+            <button type="button" class="btn sec" onClick="{{back}}">修正する</button>
+            <button type="button" class="btn pri" onClick="{{submit}}" disabled="{{noChanges}}">この内容で申請する</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{showTabbar}}" hint-placeholder-val="{{ false }}">
+        <nav class="tabbar" aria-label="管理メニュー">
+          <button type="button" class="tbb {{navList}}" onClick="{{toList}}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+            台帳一覧
+          </button>
+          <button type="button" class="tbb {{navReq}}" onClick="{{toReq}}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4H15"></path></svg>
+            承認待ち
+            <sc-if value="{{hasPending}}" hint-placeholder-val="{{ true }}"><span class="bdg">{{pendingCount}}</span></sc-if>
+          </button>
+          <button type="button" class="tbb {{navLog}}" onClick="{{toLog}}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+            行動ログ
+          </button>
+          <button type="button" class="tbb {{navTrash}}" onClick="{{toTrash}}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V4.5h6V7"></path><path d="M6 7l1 13h10l1-13"></path></svg>
+            ゴミ箱
+          </button>
+        </nav>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{confirmDelete}}" hint-placeholder-val="{{ false }}">
+    <div class="overlay">
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+        <div id="dlgT" class="h" style="font-weight: 900; font-size: 19px">ゴミ箱に移動しますか？</div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.7; color: #2A3547">{{p.name}} さんの台帳と家族情報をゴミ箱に移動します。一覧には表示されなくなりますが、ゴミ箱から<b>復元できます</b>。</p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px">
+          <button type="button" class="btn sec sm" onClick="{{cancelDelete}}">キャンセル</button>
+          <button type="button" class="btn dngf sm" onClick="{{doDelete}}">ゴミ箱へ移動</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{purging}}" hint-placeholder-val="{{ false }}">
+    <div class="overlay">
+      <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgP">
+        <div id="dlgP" class="h" style="font-weight: 900; font-size: 19px; color: #912018">完全に削除しますか？</div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.7; color: #2A3547">{{purgeName}} さんの台帳と家族情報を完全に削除します。<b>この操作は元に戻せません。</b>実行前に自動でバックアップを取ります。</p>
+        <label for="rpw" style="font-size: 13px; font-weight: 700">確認のため、管理用パスワードをもう一度入力</label>
+        <input id="rpw" class="pw" type="password" value="{{purgePw}}" onChange="{{onPurgePw}}" autocomplete="current-password" style="padding-right: 16px">
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px">
+          <button type="button" class="btn sec sm" onClick="{{cancelPurge}}">キャンセル</button>
+          <button type="button" class="btn dngf sm" onClick="{{doPurge}}" disabled="{{purgeDisabled}}">完全に削除する</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"start":{"editor":"enum","options":["login","login-admin","menu","new","verify","update","confirm","done","admin","admin-req","admin-log","admin-trash","ledger"],"default":"login"},"layout":{"editor":"enum","options":["sp","pc"],"default":"pc"},"$preview":{"width":1440,"height":960}}'>
+var SAMPLE = {
+  sei: '山田', mei: '太郎', sei_kana: 'ヤマダ', mei_kana: 'タロウ', gender: '男', birth_y: '1990', birth_m: '4', birth_d: '12', job_title: '車掌',
+  contract_y: '', contract_m: '', contract_d: '', regular_y: '2012', regular_m: '4', regular_d: '1',
+  tel_home: '', tel_mobile: '090-0000-0000', zip: '000-0000', address: '大阪府大阪市〇〇区〇〇町1-2-3',
+  family_zip: '000-0000', family_address: '〇〇県〇〇市〇〇町4-5-6', family_tel: '0000-00-0000', employee_code: '1234567',
+  station_home_line: '大阪環状線', station_home: '天王寺', station_family_line: '〇〇線', station_family: '〇〇',
+  kyosai_sogo: '加入済', kyosai_kyuen: '加入済', kyosai_kazoku: '未加入', kotsu_seisaku: '不明',
+  prev_workplace: '〇〇車掌区', officer_exp: '有', officer_when: '以前', officer_detail: '天王寺車掌区分会 青年部長'
+};
+var SAMPLE_FAMILY = [
+  { sei: '山田', mei: '花子', sei_kana: 'ヤマダ', mei_kana: 'ハナコ', y: '1992', m: '8', d: '3', gender: '女', relationship: '妻', living: '同居' },
+  { sei: '山田', mei: '蒼太', sei_kana: 'ヤマダ', mei_kana: 'ソウタ', y: '2020', m: '5', d: '20', gender: '男', relationship: '子', living: '同居' }
+];
+var EMPTY = {};
+Object.keys(SAMPLE).forEach(function (k) { EMPTY[k] = ''; });
+var BLANK_FAM = { sei: '', mei: '', sei_kana: '', mei_kana: '', y: '', m: '', d: '', gender: '', relationship: '', living: '' };
+var TELS = ['tel_home', 'tel_mobile', 'family_tel'];
+var ERR_KEYS = ['employee_code', 'birth', 'name', 'kana', 'gender', 'job_title', 'contract', 'regular', 'tel_home', 'tel_mobile', 'zip', 'address', 'family_zip', 'family_tel', 'station', 'kyosai', 'officer'];
+
+var MEMBERS = [
+  ['1234567', '山田', '太郎', 'ヤマダ', 'タロウ', '男', '1990-04-12', '2026-09-20'],
+  ['2034518', '青木', '健一', 'アオキ', 'ケンイチ', '男', '1985-02-03', '2026-06-11'],
+  ['2045671', '伊藤', '美咲', 'イトウ', 'ミサキ', '女', '1994-11-21', '2026-09-02'],
+  ['2051189', '上田', '翔', 'ウエダ', 'ショウ', '男', '1998-07-07', '2026-04-18'],
+  ['2102334', '加藤', '大輔', 'カトウ', 'ダイスケ', '男', '1979-03-15', '2026-03-30'],
+  ['2119045', '木村', '直樹', 'キムラ', 'ナオキ', '男', '1988-12-01', '2026-09-15'],
+  ['2123790', '佐々木', '恵', 'ササキ', 'メグミ', '女', '1992-05-30', '2026-07-22'],
+  ['2130056', '鈴木', '一郎', 'スズキ', 'イチロウ', '男', '1975-08-18', '2026-05-09'],
+  ['2145823', '田中', '誠', 'タナカ', 'マコト', '男', '1983-10-09', '2026-09-11'],
+  ['2150917', '中村', '優子', 'ナカムラ', 'ユウコ', '女', '1996-01-25', '2026-09-22'],
+  ['2167342', '橋本', '拓也', 'ハシモト', 'タクヤ', '男', '1991-06-14', '2026-02-14'],
+  ['2230145', '林', '久美子', 'ハヤシ', 'クミコ', '女', '1977-12-12', '2026-08-01'],
+  ['2171186', '藤井', '亮', 'フジイ', 'リョウ', '男', '1987-09-02', '2026-01-20'],
+  ['2188450', '松本', '彩', 'マツモト', 'アヤ', '女', '1999-04-08', '2026-08-28'],
+  ['2201478', '山口', '洋平', 'ヤマグチ', 'ヨウヘイ', '男', '1993-02-17', '2026-06-30'],
+  ['2226901', '吉田', '学', 'ヨシダ', 'マナブ', '男', '1981-07-19', '2026-09-05'],
+  ['2215560', '渡辺', '陽菜', 'ワタナベ', 'ヒナ', '女', '2000-03-03', '2026-04-02']
+];
+var TRASH = [
+  ['2240711', '森', '浩二', 'モリ', 'コウジ', '男', '1972-11-30', '2026-01-10', '2026-09-20 09:10'],
+  ['2098813', '佐藤', '次郎', 'サトウ', 'ジロウ', '男', '1968-05-05', '2025-11-02', '2026-05-10 17:42']
+];
+var PURGE_DAYS = 90;
+var ROWS = [['あ', 'アイウエオヴ'], ['か', 'カキクケコガギグゲゴ'], ['さ', 'サシスセソザジズゼゾ'], ['た', 'タチツテトダヂヅデド'], ['な', 'ナニヌネノ'], ['は', 'ハヒフヘホバビブベボパピプペポ'], ['ま', 'マミムメモ'], ['や', 'ヤユヨ'], ['ら', 'ラリルレロ'], ['わ', 'ワヲン']];
+var REQS = [
+  { id: 'R-0138', type: 'update', name: '中村 優子', at: '09/21 18:44', superseded: true, summary: '変更 1 項目', diff: [['総合共済', '未加入', '加入済']] },
+  { id: 'R-0139', type: 'create', name: '上田 翔', at: '09/23 19:30', superseded: false, summary: '新規登録（家族 0 人）',
+    diff: [['社員番号', '—', '2051189'], ['氏名／フリガナ', '—', '上田 翔（ウエダ ショウ）'], ['生年月日', '—', '1998年7月7日（28歳）'], ['職名', '—', '車掌'], ['電話（携帯）', '—', '090-0000-2222'], ['現住所', '—', '〒000-0000 大阪府〇〇市〇〇1-1'], ['最寄駅（自宅）', '—', '〇〇線 〇〇駅'], ['共済', '—', '総合 加入済／救援 加入済／交通政策 不明／家族支援 未加入'], ['組合役員経験', '—', '無']] },
+  { id: 'R-0141', type: 'update', name: '山田 太郎', at: '09/24 08:15', superseded: false, summary: '変更 3 項目',
+    diff: [['電話（携帯）', '090-0000-0000', '080-0000-1111'], ['現住所', '大阪府大阪市〇〇区〇〇町1-2-3', '大阪府大阪市〇〇区△△町7-8-9'], ['ご家族構成', '山田 花子（妻・同居）、山田 蒼太（子・同居）', '山田 花子（妻・同居）、山田 蒼太（子・同居）、山田 澪（子・同居）']] }
+];
+var LOGS = [
+  ['2026-09-24 10:42', 'officer', 'admin', 'view_detail', '山田 太郎', '—'],
+  ['2026-09-24 10:41', 'officer', 'admin', 'view_list', '—', '行：や'],
+  ['2026-09-24 10:40', 'officer', 'admin', 'login_ok', '—', '—'],
+  ['2026-09-24 08:15', 'member', '#3fa9c1', 'request_update', '山田 太郎', '電話（携帯）, 現住所, 家族'],
+  ['2026-09-24 08:12', 'member', '共通', 'login_ok', '—', '—'],
+  ['2026-09-23 22:05', 'member', '共通', 'lockout', '—', '5回連続失敗'],
+  ['2026-09-23 22:04', 'member', '共通', 'login_fail', '—', '—'],
+  ['2026-09-23 19:30', 'member', '#51c0d4', 'request_create', '上田 翔', '全項目'],
+  ['2026-09-22 12:02', 'officer', 'admin', 'approve', '中村 優子', '総合共済'],
+  ['2026-09-22 12:00', 'officer', 'admin', 'view_log', '—', '—'],
+  ['2026-09-21 18:44', 'member', '#9d2a77', 'request_supersede', '中村 優子', 'R-0135 → R-0138'],
+  ['2026-09-20 09:10', 'officer', 'admin', 'delete', '森 浩二', 'ゴミ箱へ移動']
+];
+var ACTIONS = {
+  login_ok: ['ログイン', 'login'], login_fail: ['ログイン失敗', 'warn'], lockout: ['ロック', 'warn'],
+  view_list: ['一覧表示', 'view'], view_detail: ['台帳表示', 'view'], view_log: ['ログ閲覧', 'view'], 'export': ['書き出し', 'view'],
+  request_create: ['新規申請', 'request'], request_update: ['更新申請', 'request'], request_supersede: ['申請置換', 'request'], request_cancel: ['申請取消', 'request'],
+  approve: ['承認', 'review'], reject: ['却下', 'review'], 'delete': ['削除', 'trash'], restore: ['復元', 'trash'], purge: ['完全削除', 'trash'], rollback: ['以前の版に戻す', 'trash']
+};
+var LOG_CATS = [['all', 'すべて'], ['login', 'ログイン'], ['view', '閲覧'], ['request', '申請'], ['review', '承認・却下'], ['trash', '削除・復元']];
+
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+function half(s) {
+  return String(s).replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[－ー―‐−]/g, '-');
+}
+function clean(name, v) {
+  if (name === 'employee_code' || name === 'code') return half(v).replace(/\D/g, '').slice(0, 7);
+  if (name === 'zip' || name === 'family_zip') {
+    var dg = half(v).replace(/\D/g, '').slice(0, 7);
+    return dg.length > 3 ? dg.slice(0, 3) + '-' + dg.slice(3) : dg;
+  }
+  if (/(^|_)y$/.test(name)) return half(v).replace(/\D/g, '').slice(0, 4);
+  if (/(^|_)[md]$/.test(name)) return half(v).replace(/\D/g, '').slice(0, 2);
+  if (TELS.indexOf(name) >= 0) return half(v).replace(/[^\d-]/g, '').slice(0, 13);
+  return v;
+}
+function validDate(y, m, d) {
+  if (!y && !m && !d) return null;
+  if (String(y).length !== 4 || !m || !d) return false;
+  var dt = new Date(+y, +m - 1, +d);
+  return dt.getFullYear() === +y && dt.getMonth() === +m - 1 && dt.getDate() === +d && dt <= new Date();
+}
+function ageNum(y, m, d) {
+  var now = new Date(), a = now.getFullYear() - +y;
+  if (now.getMonth() + 1 < +m || (now.getMonth() + 1 === +m && now.getDate() < +d)) a--;
+  return a;
+}
+function ageOf(y, m, d) { return validDate(y, m, d) === true ? ageNum(y, m, d) + '歳' : ''; }
+function fmtDate(y, m, d) { return validDate(y, m, d) === true ? y + '年' + (+m) + '月' + (+d) + '日' : ''; }
+/* 月日は数値で比べるので「1」でも「01」でも一致する */
+function isRegistered(code, y, m, d) { return code === SAMPLE.employee_code && +y === 1990 && +m === 4 && +d === 12; }
+function rowOf(kana) {
+  var c = kana.charAt(0);
+  for (var i = 0; i < ROWS.length; i++) if (ROWS[i][1].indexOf(c) >= 0) return ROWS[i][0];
+  return '';
+}
+function catOf(a) {
+  if (/^login|lockout/.test(a)) return 'login';
+  if (/^view|export/.test(a)) return 'view';
+  if (/^request/.test(a)) return 'request';
+  if (a === 'approve' || a === 'reject') return 'review';
+  return 'trash';
+}
+var KANA_RE = /^[ァ-ヶー\s　]+$/;
+function validate(f, fam) {
+  var e = {};
+  var TEL = /^0\d{1,4}-?\d{1,4}-?\d{3,4}$/, ZIP = /^\d{3}-\d{4}$/;
+  if (!/^\d{7}$/.test(f.employee_code)) e.employee_code = '7桁の半角数字で入力してください';
+  if (validDate(f.birth_y, f.birth_m, f.birth_d) !== true) e.birth = '正しい生年月日を入力してください';
+  if (!f.sei.trim() || !f.mei.trim()) e.name = '姓と名を入力してください';
+  if (!f.sei_kana.trim() || !f.mei_kana.trim()) e.kana = 'セイとメイを入力してください';
+  else if (!KANA_RE.test(f.sei_kana) || !KANA_RE.test(f.mei_kana)) e.kana = '全角カタカナで入力してください';
+  if (!f.gender) e.gender = '性別を選んでください';
+  if (!f.job_title.trim()) e.job_title = '職名を入力してください';
+  if (validDate(f.contract_y, f.contract_m, f.contract_d) === false) e.contract = '日付が正しくありません';
+  if (validDate(f.regular_y, f.regular_m, f.regular_d) === false) e.regular = '日付が正しくありません';
+  if (!f.tel_mobile) e.tel_mobile = '携帯番号を入力してください';
+  else if (!TEL.test(f.tel_mobile)) e.tel_mobile = '電話番号の形式が正しくありません';
+  if (f.tel_home && !TEL.test(f.tel_home)) e.tel_home = '電話番号の形式が正しくありません';
+  if (f.family_tel && !TEL.test(f.family_tel)) e.family_tel = '電話番号の形式が正しくありません';
+  if (!f.zip) e.zip = '郵便番号を入力してください';
+  else if (!ZIP.test(f.zip)) e.zip = '郵便番号は7桁です';
+  if (f.family_zip && !ZIP.test(f.family_zip)) e.family_zip = '郵便番号は7桁です';
+  if (!f.address.trim()) e.address = '住所を入力してください';
+  if (!f.station_home_line.trim() || !f.station_home.trim()) e.station = '自宅の最寄駅（線と駅）を入力してください';
+  if (!f.kyosai_sogo || !f.kyosai_kyuen || !f.kyosai_kazoku || !f.kotsu_seisaku) e.kyosai = '4つすべて選んでください';
+  if (!f.officer_exp) e.officer = '無・有を選んでください';
+  else if (f.officer_exp === '有' && (!f.officer_when || !f.officer_detail.trim())) e.officer = '以前・現在と、所属箇所と役職を入力してください';
+  fam.forEach(function (m, i) {
+    if (!m.sei.trim() || !m.mei.trim() || !m.sei_kana.trim() || !m.mei_kana.trim()) e['fam' + i] = '氏名（姓・名）とフリガナを入力してください';
+    else if (!KANA_RE.test(m.sei_kana) || !KANA_RE.test(m.mei_kana)) e['fam' + i] = 'フリガナは全角カタカナで入力してください';
+    else if (validDate(m.y, m.m, m.d) === false) e['fam' + i] = '生年月日が正しくありません';
+    else if (!m.relationship) e['fam' + i] = '続柄を選んでください';
+  });
+  return e;
+}
+function memberToForm(row) {
+  var f = clone(SAMPLE), b = row[6].split('-');
+  f.employee_code = row[0]; f.sei = row[1]; f.mei = row[2]; f.sei_kana = row[3]; f.mei_kana = row[4]; f.gender = row[5];
+  f.birth_y = b[0]; f.birth_m = String(+b[1]); f.birth_d = String(+b[2]);
+  return f;
+}
+function sheetOf(f, fam, base, baseFam, made, updatedAt) {
+  var ch = function (keys) {
+    if (!base) return '';
+    for (var i = 0; i < keys.length; i++) if (f[keys[i]] !== base[keys[i]]) return 'hl';
+    return '';
+  };
+  var mk = function (v, x) { return v === x ? 'on' : ''; };
+  var strip = function (s, suf) { return (s || '').replace(new RegExp(suf + '$'), ''); };
+  var cells = [];
+  for (var i = 0; i < 10; i++) {
+    var m = fam[i], b = baseFam ? baseFam[i] : null;
+    var hl = base && JSON.stringify(m || null) !== JSON.stringify(b || null) ? 'hl' : '';
+    cells.push(m ? {
+      kana: (m.sei_kana + ' ' + m.mei_kana).trim(), name: (m.sei + '　' + m.mei).trim(), birth: fmtDate(m.y, m.m, m.d),
+      gender: m.gender, rel: m.relationship, live: (m.living || '').charAt(0), hl: hl
+    } : { kana: '', name: '', birth: '', gender: '', rel: '', live: '', hl: hl });
+  }
+  var famCells = [];
+  for (var r = 0; r < 5; r++) { famCells.push(cells[r]); famCells.push(cells[r + 5]); }
+  var bg = function (keys) { return ch(keys) ? '#FFF1B8' : 'transparent'; };
+  var or = function (v) { return v || '—'; };
+  var stTxt = function (line, st) {
+    line = strip(line, '線'); st = strip(st, '駅');
+    return line || st ? (line ? line + '線 ' : '') + (st ? st + '駅' : '') : '—';
+  };
+  var addrTxt = function (zip, addr) { return zip || addr ? (zip ? '〒' + zip + '\n' : '') + (addr || '') : '—'; };
+  var famRows = fam.length ? fam.map(function (m, i) {
+    var b = baseFam ? baseFam[i] : null;
+    return {
+      label: (m.relationship || '家族') + '（' + (m.living || '—') + '）',
+      value: (m.sei + ' ' + m.mei).trim() + '（' + (m.sei_kana + ' ' + m.mei_kana).trim() + '）\n' + (fmtDate(m.y, m.m, m.d) || '生年月日なし') + (validDate(m.y, m.m, m.d) === true ? '・' + ageNum(m.y, m.m, m.d) + '歳' : '') + (m.gender ? '・' + m.gender : ''),
+      bg: base && JSON.stringify(m) !== JSON.stringify(b || null) ? '#FFF1B8' : 'transparent'
+    };
+  }) : [{ label: '家族', value: 'なし', bg: base && baseFam && baseFam.length ? '#FFF1B8' : 'transparent' }];
+  if (base && baseFam && baseFam.length > fam.length) famRows.push({ label: '削除', value: (baseFam.length - fam.length) + '人を削除', bg: '#FFF1B8' });
+  var offTxt = f.officer_exp === '有' ? '有（' + (f.officer_when || '—') + '）\n' + (f.officer_detail || '') : or(f.officer_exp);
+  var readable = [
+    { title: '基本情報', rows: [
+      { label: '氏名', value: or((f.sei + ' ' + f.mei).trim()), bg: bg(['sei', 'mei']) },
+      { label: 'フリガナ', value: or((f.sei_kana + ' ' + f.mei_kana).trim()), bg: bg(['sei_kana', 'mei_kana']) },
+      { label: '社員番号', value: or(f.employee_code), bg: bg(['employee_code']) },
+      { label: '性別', value: or(f.gender), bg: bg(['gender']) },
+      { label: '生年月日', value: fmtDate(f.birth_y, f.birth_m, f.birth_d) ? fmtDate(f.birth_y, f.birth_m, f.birth_d) + '（' + ageOf(f.birth_y, f.birth_m, f.birth_d) + '）' : '—', bg: bg(['birth_y', 'birth_m', 'birth_d']) },
+      { label: '職名', value: or(f.job_title), bg: bg(['job_title']) },
+      { label: '契約社員入社', value: or(fmtDate(f.contract_y, f.contract_m, f.contract_d)), bg: bg(['contract_y', 'contract_m', 'contract_d']) },
+      { label: '正社員入社', value: or(fmtDate(f.regular_y, f.regular_m, f.regular_d)), bg: bg(['regular_y', 'regular_m', 'regular_d']) }
+    ] },
+    { title: '連絡先・住所', rows: [
+      { label: '携帯電話', value: or(f.tel_mobile), bg: bg(['tel_mobile']) },
+      { label: '自宅電話', value: or(f.tel_home), bg: bg(['tel_home']) },
+      { label: '現住所', value: addrTxt(f.zip, f.address), bg: bg(['zip', 'address']) },
+      { label: '実家住所', value: addrTxt(f.family_zip, f.family_address), bg: bg(['family_zip', 'family_address']) },
+      { label: '実家電話', value: or(f.family_tel), bg: bg(['family_tel']) },
+      { label: '最寄駅（自宅）', value: stTxt(f.station_home_line, f.station_home), bg: bg(['station_home_line', 'station_home']) },
+      { label: '最寄駅（実家）', value: stTxt(f.station_family_line, f.station_family), bg: bg(['station_family_line', 'station_family']) }
+    ] },
+    { title: 'ご家族構成（' + fam.length + '人）', rows: famRows },
+    { title: '共済加入状況', rows: [
+      { label: '総合共済', value: or(f.kyosai_sogo), bg: bg(['kyosai_sogo']) },
+      { label: '救援共済', value: or(f.kyosai_kyuen), bg: bg(['kyosai_kyuen']) },
+      { label: '交通政策をすすめる会', value: or(f.kotsu_seisaku), bg: bg(['kotsu_seisaku']) },
+      { label: '家族支援共済', value: or(f.kyosai_kazoku), bg: bg(['kyosai_kazoku']) }
+    ] },
+    { title: '前職場・組合役員経験', rows: [
+      { label: '前職場', value: or(f.prev_workplace), bg: bg(['prev_workplace']) },
+      { label: '組合役員経験', value: offTxt, bg: bg(['officer_exp', 'officer_when', 'officer_detail']) }
+    ] }
+  ];
+  var ky = function (label, key) { var v = f[key]; return { label: label, a: mk(v, '加入済'), b: mk(v, '未加入'), c: mk(v, '不明'), hl: ch([key]) }; };
+  return {
+    p: {
+      code: f.employee_code, kana: f.sei_kana + ' ' + f.mei_kana, name: f.sei + '　' + f.mei, gender: f.gender,
+      age: ageOf(f.birth_y, f.birth_m, f.birth_d), birth: fmtDate(f.birth_y, f.birth_m, f.birth_d), job: f.job_title,
+      contract: fmtDate(f.contract_y, f.contract_m, f.contract_d), regular: fmtDate(f.regular_y, f.regular_m, f.regular_d),
+      telHome: f.tel_home, telMobile: f.tel_mobile, zip: f.zip, address: f.address,
+      fzip: f.family_zip, faddress: f.family_address, ftel: f.family_tel,
+      stHomeLine: strip(f.station_home_line, '線'), stHome: strip(f.station_home, '駅'),
+      stFamLine: strip(f.station_family_line, '線'), stFam: strip(f.station_family, '駅'),
+      prev: f.prev_workplace, offNo: mk(f.officer_exp, '無'), offYes: mk(f.officer_exp, '有'),
+      offPast: f.officer_exp === '有' ? mk(f.officer_when, '以前') : '', offNow: f.officer_exp === '有' ? mk(f.officer_when, '現在') : '',
+      offDetail: f.officer_exp === '有' ? f.officer_detail : '',
+      madeY: made[0], madeM: made[1], madeD: made[2], updatedAt: updatedAt || ''
+    },
+    h: {
+      kana: ch(['sei_kana', 'mei_kana']), name: ch(['sei', 'mei']), gender: ch(['gender']), birth: ch(['birth_y', 'birth_m', 'birth_d']),
+      job: ch(['job_title']), contract: ch(['contract_y', 'contract_m', 'contract_d']), regular: ch(['regular_y', 'regular_m', 'regular_d']),
+      tel: ch(['tel_home', 'tel_mobile']), addr: ch(['zip', 'address']), faddr: ch(['family_zip', 'family_address']), ftel: ch(['family_tel']),
+      code: ch(['employee_code']), st: ch(['station_home_line', 'station_home', 'station_family_line', 'station_family']),
+      prev: ch(['prev_workplace']), off: ch(['officer_exp', 'officer_when', 'officer_detail'])
+    },
+    famCells: famCells,
+    readable: readable,
+    kyosaiCells: [ky('総合共済', 'kyosai_sogo'), ky('交通政策をすすめる会', 'kotsu_seisaku'), ky('救援共済', 'kyosai_kyuen'), ky('家族支援共済', 'kyosai_kazoku')]
+  };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var s = props.start || 'login';
+    var st = {
+      screen: 'login', tab: 'member', pw: '', show: false,
+      mode: 'new', f: clone(EMPTY), family: [], v: { code: '', y: '', m: '', d: '' }, vErr: false, tries: 0,
+      errs: {}, tried: false, cancelled: false, reqNo: 'R-2026-0142',
+      row: 'all', q: '', selId: 'R-0141', reqOpen: false, done: {}, rejecting: false, reason: '', logCat: 'all', toast: '',
+      ledgerCode: '1234567', confirmDelete: false, zoom: false, view: 'list',
+      active: clone(MEMBERS), trash: clone(TRASH), purgeCode: '', purgePw: '',
+      w: props.layout === 'sp' ? 390 : 1440, hw: 0
+    };
+    var map = { login: 'login', 'login-admin': 'login', menu: 'm-menu', 'new': 'm-new', verify: 'm-verify', update: 'm-update', confirm: 'm-confirm', done: 'm-done', admin: 'a-list', 'admin-req': 'a-req', 'admin-log': 'a-log', 'admin-trash': 'a-trash', ledger: 'a-ledger' };
+    st.screen = map[s] || 'login';
+    if (s === 'login-admin') st.tab = 'admin';
+    if (s === 'update' || s === 'confirm') {
+      st.mode = 'update'; st.f = clone(SAMPLE); st.family = clone(SAMPLE_FAMILY);
+      if (s === 'confirm') {
+        st.f.tel_mobile = '080-0000-1111'; st.f.address = '大阪府大阪市〇〇区△△町7-8-9';
+        st.family.push({ sei: '山田', mei: '澪', sei_kana: 'ヤマダ', mei_kana: 'ミオ', y: '2024', m: '2', d: '14', gender: '女', relationship: '子', living: '同居' });
+      }
+    }
+    this.state = st;
+    var self = this;
+    this.root = null; this.host = null; this.sc = null; this.ro = null;
+    this.rootRef = function (el) { self.root = el; if (el && self.ro) self.ro.observe(el); };
+    this.hostRef = function (el) {
+      if (self.host && self.ro) self.ro.unobserve(self.host);
+      self.host = el;
+      if (el && self.ro) self.ro.observe(el);
+      if (el) setTimeout(function () { self.measure(); }, 0);
+    };
+    this.scRef = function (el) { self.sc = el; };
+  }
+  componentDidMount() {
+    var self = this;
+    if (typeof ResizeObserver !== 'undefined') {
+      this.ro = new ResizeObserver(function () { self.measure(); });
+      if (this.root) this.ro.observe(this.root);
+      if (this.host) this.ro.observe(this.host);
+    }
+    this.measure();
+  }
+  componentWillUnmount() { if (this.ro) this.ro.disconnect(); }
+  measure() {
+    var w = this.root ? this.root.clientWidth : this.state.w;
+    var hw = this.host ? this.host.clientWidth : 0;
+    if (w && (w !== this.state.w || hw !== this.state.hw)) this.setState({ w: w, hw: hw });
+  }
+  go(patch) {
+    patch.zoom = false;
+    this.setState(patch);
+    if (this.sc) this.sc.scrollTop = 0;
+  }
+  patchForm(f, family) {
+    var p = { f: f, family: family };
+    if (this.state.tried) p.errs = validate(f, family);
+    this.setState(p);
+  }
+  setF(name, val) {
+    var f = Object.assign({}, this.state.f);
+    f[name] = clean(name, val);
+    this.patchForm(f, this.state.family);
+  }
+  setFam(i, name, val) {
+    var fam = this.state.family.slice();
+    fam[i] = Object.assign({}, fam[i]);
+    fam[i][name] = clean(name, val);
+    this.patchForm(this.state.f, fam);
+  }
+  seg(name, opts) {
+    var self = this, f = this.state.f;
+    return opts.map(function (o) { return { label: o, on: f[name] === o, cls: f[name] === o ? 'on' : '', pick: function () { self.setF(name, o); } }; });
+  }
+  famSeg(i, name, opts) {
+    var self = this, m = this.state.family[i];
+    return opts.map(function (o) { return { label: o, on: m[name] === o, cls: m[name] === o ? 'on' : '', pick: function () { self.setFam(i, name, o); } }; });
+  }
+  renderVals() {
+    var self = this, s = this.state, f = s.f, scr = s.screen;
+    var wide = s.w >= 900;
+    var isAdmin = scr.indexOf('a-') === 0;
+    var isNew = scr === 'm-new', isUpdate = scr === 'm-update';
+    var isConfirm = scr === 'm-confirm', isLedger = scr === 'a-ledger';
+
+    /* ---- ログイン ---- */
+    var adminTab = s.tab === 'admin';
+
+    /* ---- フォーム ---- */
+    var idComplete = /^\d{7}$/.test(f.employee_code) && validDate(f.birth_y, f.birth_m, f.birth_d) === true;
+    var dupe = idComplete && isRegistered(f.employee_code, f.birth_y, f.birth_m, f.birth_d);
+    var errs = s.errs, errCount = Object.keys(errs).length;
+    var has = {}, err = {}, bad = {};
+    ERR_KEYS.forEach(function (k) { has[k] = !!errs[k]; err[k] = errs[k] || ''; bad[k] = errs[k] ? 'bad' : ''; });
+    var family = s.family.map(function (m, i) {
+      return Object.assign({}, m, {
+        idx: i + 1,
+        on: function (e) { self.setFam(i, e.target.name, e.target.value); },
+        del: function () { var fam = self.state.family.slice(); fam.splice(i, 1); self.patchForm(self.state.f, fam); },
+        genders: self.famSeg(i, 'gender', ['男', '女']),
+        lives: self.famSeg(i, 'living', ['同居', '別居']),
+        hasErr: !!errs['fam' + i], err: errs['fam' + i] || ''
+      });
+    });
+
+    /* ---- 管理 ---- */
+    var all = s.active.map(function (m) {
+      var b = m[6].split('-');
+      return { code: m[0], name: m[1] + ' ' + m[2], kana: m[3] + ' ' + m[4], age: ageNum(b[0], b[1], b[2]) + '歳', updated: m[7].replace(/-/g, '/'), upd: m[7], row: rowOf(m[3]),
+        open: function () { self.go({ screen: 'a-ledger', ledgerCode: m[0], toast: '' }); } };
+    }).sort(function (a, b) { return a.kana < b.kana ? -1 : 1; });
+    var q = s.q.replace(/[\s　]/g, '');
+    var list = all.filter(function (m) {
+      if (s.row !== 'all' && m.row !== s.row) return false;
+      if (!q) return true;
+      return m.name.replace(/\s/g, '').indexOf(q) >= 0 || m.kana.replace(/\s/g, '').indexOf(q) >= 0 || m.code.indexOf(q) >= 0;
+    });
+    var chips = [{ label: 'すべて', key: 'all' }].concat(ROWS.map(function (r) { return { label: r[0], key: r[0] }; })).map(function (c) {
+      var n = c.key === 'all' ? all.length : all.filter(function (m) { return m.row === c.key; }).length;
+      return { label: c.label, on: s.row === c.key, cls: s.row === c.key ? 'on' : '', empty: n === 0, pick: function () { self.setState({ row: c.key }); } };
+    });
+    var pending = REQS.filter(function (r) { return !s.done[r.id]; });
+    var reqs = pending.map(function (r) {
+      return Object.assign({}, r, {
+        typeLabel: r.type === 'create' ? '新規' : '更新', tagCls: r.type === 'create' ? 'new' : 'upd',
+        cls: r.id === s.selId && wide ? 'on' : '',
+        pick: function () { self.setState({ selId: r.id, reqOpen: true, rejecting: false, reason: '', toast: '' }); if (self.sc) self.sc.scrollTop = 0; },
+        diff: r.diff.map(function (d) { return { label: d[0], before: d[1], after: d[2] }; })
+      });
+    });
+    var sel = reqs.filter(function (r) { return r.id === s.selId; })[0] || (wide ? reqs[0] : null) || null;
+    var finish = function (verb) {
+      var done = Object.assign({}, self.state.done); done[sel.id] = verb;
+      var rest = reqs.filter(function (r) { return r.id !== sel.id; });
+      self.setState({ done: done, selId: rest.length ? rest[0].id : '', reqOpen: false, rejecting: false, reason: '', toast: sel.name + ' さんの申請（' + sel.id + '）を' + verb + 'しました' });
+    };
+    var logs = LOGS.filter(function (l) { return s.logCat === 'all' || catOf(l[3]) === s.logCat; }).map(function (l) {
+      var a = ACTIONS[l[3]] || [l[3], 'view'];
+      return { at: l[0], role: l[1] === 'officer' ? '役員' : '組合員', actor: l[2], label: a[0], cls: a[1], target: l[4], detail: l[5] };
+    });
+
+    /* ---- 台帳シート ---- */
+    var sheet;
+    var now = new Date();
+    if (isLedger) {
+      var row = s.active.filter(function (m) { return m[0] === s.ledgerCode; })[0] || s.active[0] || MEMBERS[0];
+      var lf = memberToForm(row), lfam = row[0] === SAMPLE.employee_code ? SAMPLE_FAMILY : [];
+      var u = row[7].split('-');
+      sheet = sheetOf(lf, lfam, null, null, [+u[0], +u[1], +u[2]], row[7].replace(/-/g, '/'));
+    } else {
+      sheet = sheetOf(f, s.family, s.mode === 'update' ? SAMPLE : null, s.mode === 'update' ? SAMPLE_FAMILY : null, [now.getFullYear(), now.getMonth() + 1, now.getDate()], '');
+    }
+    var fitScale = Math.min(1, ((s.hw || (s.w - 32)) / 794));
+    var scale = wide ? fitScale : (s.zoom ? 1 : fitScale);
+    var noChanges = isConfirm && s.mode === 'update' && JSON.stringify(f) === JSON.stringify(SAMPLE) && JSON.stringify(s.family) === JSON.stringify(SAMPLE_FAMILY);
+
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var trash = s.trash.map(function (t) {
+      var d = t[8].split(' ')[0].split('-');
+      var days = Math.floor((now - new Date(+d[0], +d[1] - 1, +d[2])) / 86400000);
+      var ok = days >= PURGE_DAYS;
+      return {
+        code: t[0], name: t[1] + ' ' + t[2], kana: t[3] + ' ' + t[4], deletedAt: t[8].replace(/-/g, '/'), by: 'admin',
+        locked: !ok, purgeStyle: ok ? '' : 'opacity: .45; cursor: not-allowed',
+        purgeText: ok ? '保持期間（' + PURGE_DAYS + '日）を過ぎています。完全削除できます' : 'あと ' + (PURGE_DAYS - days) + ' 日で完全削除できるようになります',
+        purgeColor: ok ? '#912018' : '#5A6475',
+        restore: function () {
+          self.setState({
+            trash: self.state.trash.filter(function (x) { return x[0] !== t[0]; }),
+            active: self.state.active.concat([t.slice(0, 8)]),
+            toast: t[1] + ' ' + t[2] + ' さんの台帳を復元しました（家族情報も復元）'
+          });
+        },
+        askPurge: function () { if (ok) self.setState({ purgeCode: t[0], purgePw: '' }); }
+      };
+    });
+    var purgeRow = s.trash.filter(function (x) { return x[0] === s.purgeCode; })[0];
+    var titles = { 'a-trash': 'ゴミ箱', 'm-menu': '組合員メニュー', 'm-new': '新規登録', 'm-verify': '本人確認', 'm-update': '登録内容の更新', 'm-confirm': '内容の確認', 'm-done': '申請完了', 'a-list': '台帳一覧', 'a-req': '承認待ちの申請', 'a-log': '行動ログ', 'a-ledger': sheet.p.name + '（' + sheet.p.code + '）' };
+    var hasBack = ['m-new', 'm-verify', 'm-update', 'm-confirm', 'a-ledger'].indexOf(scr) >= 0 || (scr === 'a-req' && !wide && s.reqOpen);
+    var tabTo = function (t) { return function () { self.go({ screen: t, toast: '', reqOpen: false }); }; };
+
+    return {
+      wide: wide, narrow: !wide, wideCls: wide ? 'wide' : '',
+      rootRef: this.rootRef, hostRef: this.hostRef, scRef: this.scRef,
+      isLogin: scr === 'login', notLogin: scr !== 'login',
+      title: titles[scr] || '',
+      hasBack: hasBack, showLogo: !hasBack,
+      back: function () {
+        if (scr === 'm-confirm') self.go({ screen: s.mode === 'new' ? 'm-new' : 'm-update' });
+        else if (scr === 'a-ledger') self.go({ screen: 'a-list' });
+        else if (scr === 'a-req') self.setState({ reqOpen: false });
+        else self.go({ screen: 'm-menu' });
+      },
+      logout: function () { self.go({ screen: 'login', pw: '', f: clone(EMPTY), family: [], errs: {}, tried: false, toast: '' }); },
+
+      /* login */
+      isMemberTab: !adminTab, isAdminTab: adminTab,
+      memberTabCls: adminTab ? '' : 'on', adminTabCls: adminTab ? 'on' : '',
+      pickMemberTab: function () { self.setState({ tab: 'member' }); },
+      pickAdminTab: function () { self.setState({ tab: 'admin' }); },
+      pw: s.pw,
+      onPw: function (e) { self.setState({ pw: e.target.value }); },
+      pwType: s.show ? 'text' : 'password',
+      eyeLabel: s.show ? 'パスワードを隠す' : 'パスワードを表示',
+      toggleShow: function () { self.setState({ show: !self.state.show }); },
+      pwLabel: adminTab ? '管理用パスワード' : '共通パスワード',
+      pwHint: adminTab ? '役員専用です。5回間違えると15分ロックされます。' : '分会で案内されたパスワードを入力してください。',
+      loginBtnCls: adminTab ? 'navy' : 'pri',
+      doLogin: function () { self.go({ screen: adminTab ? 'a-list' : 'm-menu', pw: '' }); },
+
+      /* member */
+      isMenu: scr === 'm-menu', isVerify: scr === 'm-verify', isNew: isNew, isUpdate: isUpdate,
+      isForm: isNew || isUpdate, isConfirm: isConfirm, isDone: scr === 'm-done',
+      goNew: function () { self.go({ screen: 'm-new', mode: 'new', f: clone(EMPTY), family: [], errs: {}, tried: false }); },
+      goVerify: function () { self.go({ screen: 'm-verify', vErr: false }); },
+      goMenu: function () { self.go({ screen: 'm-menu', f: clone(EMPTY), family: [], errs: {}, tried: false, v: { code: '', y: '', m: '', d: '' } }); },
+      v: s.v,
+      onV: function (e) { var v = Object.assign({}, self.state.v); v[e.target.name] = clean(e.target.name, e.target.value); self.setState({ v: v }); },
+      vErr: s.vErr,
+      vLocked: s.tries >= 5,
+      vErrText: s.tries >= 5 ? '失敗が続いたため、一時的にロックしました。15分ほど時間をおいてからやり直してください。' : '見つかりません。社員番号と生年月日をご確認ください。（あと ' + (5 - s.tries) + ' 回まちがえると一時ロック）',
+      doVerify: function () {
+        var v = self.state.v;
+        if (isRegistered(v.code, v.y, v.m, v.d)) self.go({ screen: 'm-update', mode: 'update', f: clone(SAMPLE), family: clone(SAMPLE_FAMILY), errs: {}, tried: false, vErr: false, tries: 0 });
+        else self.setState({ vErr: true, tries: self.state.tries + 1 });
+      },
+      f: f,
+      onField: function (e) { self.setF(e.target.name, e.target.value); },
+      fullName: f.sei + ' ' + f.mei,
+      age: ageOf(f.birth_y, f.birth_m, f.birth_d),
+      birthText: fmtDate(f.birth_y, f.birth_m, f.birth_d),
+      initial: (f.sei || '？').charAt(0),
+      idIdle: !idComplete, idDupe: dupe, idOk: idComplete && !dupe,
+      dupeToUpdate: function () { self.go({ screen: 'm-verify', vErr: false, v: { code: f.employee_code, y: f.birth_y, m: f.birth_m, d: f.birth_d } }); },
+      hasMyPending: !s.cancelled, pendingCancelled: s.cancelled,
+      cancelPending: function () { self.setState({ cancelled: true }); },
+      showForm: (isNew && idComplete && !dupe) || isUpdate,
+      showFormBar: (isNew && idComplete && !dupe) || isUpdate,
+      has: has, err: err, bad: bad,
+      genderOpts: this.seg('gender', ['男', '女']),
+      officerOpts: this.seg('officer_exp', ['無', '有']),
+      whenOpts: this.seg('officer_when', ['以前', '現在']),
+      isOfficer: f.officer_exp === '有',
+      kyosaiOpts: [['kyosai_sogo', '総合共済'], ['kyosai_kyuen', '救援共済'], ['kotsu_seisaku', '交通政策をすすめる会'], ['kyosai_kazoku', '家族支援共済']].map(function (d) { return { label: d[1], opts: self.seg(d[0], ['加入済', '未加入', '不明']) }; }),
+      family: family,
+      famCount: s.family.length, noFamily: s.family.length === 0, canAddFam: s.family.length < 10,
+      addFam: function () {
+        var nf = Object.assign({}, BLANK_FAM, { sei: self.state.f.sei, sei_kana: self.state.f.sei_kana });
+        self.patchForm(self.state.f, self.state.family.concat([nf]));
+      },
+      barText: errCount ? '入力内容を確認してください（' + errCount + '件）' : (isUpdate ? '次の画面で、台帳の形で確認できます' : '必須項目をすべて入力してください'),
+      barColor: errCount ? '#B42318' : '#5A6475',
+      toConfirm: function () {
+        var e = validate(self.state.f, self.state.family);
+        if (Object.keys(e).length) self.setState({ errs: e, tried: true });
+        else self.go({ screen: 'm-confirm', errs: {} });
+      },
+      confirmLead: s.mode === 'update' ? '黄色が今回変更したところです。' + (wide ? '紙の台帳と同じ形で表示しています。' : '「台帳の形」で紙と同じ見た目も確認できます。') : (wide ? '紙の台帳と同じ形で表示しています。' : '「台帳の形」で紙と同じ見た目も確認できます。') + '内容を確認してください。',
+      noChanges: noChanges,
+      submit: function () { self.go({ screen: 'm-done', reqNo: 'R-2026-0' + (140 + Math.floor(Math.random() * 60)) }); },
+      reqNo: s.reqNo,
+
+      /* admin */
+      showSide: isAdmin && wide,
+      showTabbar: isAdmin && !wide && !isLedger,
+      navList: scr === 'a-list' ? 'on' : '', navReq: scr === 'a-req' ? 'on' : '', navLog: scr === 'a-log' ? 'on' : '',
+      toList: tabTo('a-list'), toReq: tabTo('a-req'), toLog: tabTo('a-log'),
+      isList: scr === 'a-list', isReq: scr === 'a-req', isLog: scr === 'a-log', isLedger: isLedger,
+      showToast: !!s.toast && (scr === 'a-list' || scr === 'a-req' || scr === 'a-trash'), toast: s.toast,
+      total: all.length,
+      monthCount: all.filter(function (m) { return m.upd.indexOf('2026-09') === 0; }).length,
+      chips: chips, q: s.q,
+      onQ: function (e) { self.setState({ q: e.target.value }); },
+      list: list, listEmpty: list.length === 0,
+      listSummary: list.length + ' 件を表示（全 ' + all.length + ' 件・50件ずつ）',
+      pendingCount: pending.length, hasPending: pending.length > 0,
+      reqs: reqs, noReqs: reqs.length === 0,
+      showReqList: wide || !s.reqOpen,
+      showReqDetail: !!sel && (wide || s.reqOpen),
+      sel: sel || { diff: [] },
+      rejecting: s.rejecting, notRejecting: !s.rejecting,
+      reason: s.reason,
+      onReason: function (e) { self.setState({ reason: e.target.value }); },
+      startReject: function () { self.setState({ rejecting: true }); },
+      stopReject: function () { self.setState({ rejecting: false, reason: '' }); },
+      reject: function () { finish('却下'); },
+      approve: function () { finish('承認'); },
+      logChips: LOG_CATS.map(function (c) { return { label: c[1], on: s.logCat === c[0], cls: s.logCat === c[0] ? 'on' : '', pick: function () { self.setState({ logCat: c[0] }); } }; }),
+      logs: logs,
+      logSummary: logs.length + ' 件（新しい順・50件ずつ）',
+
+      /* sheet */
+      showSheet: isConfirm || isLedger,
+      sideCls: isLedger ? 'with-side' : '',
+      p: sheet.p, h: sheet.h, famCells: sheet.famCells, kyosaiCells: sheet.kyosaiCells,
+      scale: scale, sheetW: Math.round(794 * scale), sheetH: Math.round(1123 * scale),
+      readable: sheet.readable,
+      isListView: s.view === 'list', isSheetView: s.view !== 'list',
+      viewListCls: s.view === 'list' ? 'on' : '', viewSheetCls: s.view !== 'list' ? 'on' : '',
+      toListView: function () { self.setState({ view: 'list', zoom: false }); },
+      toSheetView: function () { self.setState({ view: 'sheet' }); },
+      showReadable: !wide && s.view === 'list',
+      showSheetHost: wide || s.view !== 'list',
+      showZoomRow: !wide && s.view !== 'list',
+      zoomLabel: s.zoom ? '画面に合わせる' : '拡大して見る',
+      zoomHint: s.zoom ? '横にスクロールできます' : '紙と同じ見た目で縮小表示中',
+      toggleZoom: function () { self.setState({ zoom: !self.state.zoom }); },
+      history: [
+        { at: '2026/09/20 14:32', what: '更新申請を承認（携帯電話・家族）' },
+        { at: '2026/03/02 10:05', what: '更新申請を承認（共済）' },
+        { at: '2025/04/08 18:20', what: '新規登録を承認' }
+      ],
+      print: function () { try { window.print(); } catch (e) {} },
+      confirmDelete: s.confirmDelete,
+      askDelete: function () { self.setState({ confirmDelete: true }); },
+      cancelDelete: function () { self.setState({ confirmDelete: false }); },
+      doDelete: function () {
+        var code = self.state.ledgerCode;
+        var row = self.state.active.filter(function (m) { return m[0] === code; })[0];
+        if (!row) return;
+        var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+        self.go({
+          confirmDelete: false, screen: 'a-list',
+          active: self.state.active.filter(function (m) { return m[0] !== code; }),
+          trash: [row.concat([ts])].concat(self.state.trash),
+          toast: row[1] + ' ' + row[2] + ' さんの台帳をゴミ箱に移動しました（ゴミ箱から復元できます）'
+        });
+      },
+      isTrash: scr === 'a-trash',
+      navTrash: scr === 'a-trash' ? 'on' : '',
+      toTrash: tabTo('a-trash'),
+      trash: trash, trashCount: trash.length, hasTrash: trash.length > 0, trashEmpty: trash.length === 0,
+      purging: !!purgeRow,
+      purgeName: purgeRow ? purgeRow[1] + ' ' + purgeRow[2] : '',
+      purgePw: s.purgePw,
+      onPurgePw: function (e) { self.setState({ purgePw: e.target.value }); },
+      purgeDisabled: !s.purgePw,
+      cancelPurge: function () { self.setState({ purgeCode: '', purgePw: '' }); },
+      doPurge: function () {
+        var code = self.state.purgeCode;
+        self.setState({ purgeCode: '', purgePw: '', trash: self.state.trash.filter(function (x) { return x[0] !== code; }), toast: purgeRow[1] + ' ' + purgeRow[2] + ' さんの台帳を完全に削除しました（削除前のバックアップを保存済み）' });
+      },
+      statSize: wide ? '32px' : '24px'
+    };
+  }
+}
+</script>
+</body>
+</html>
