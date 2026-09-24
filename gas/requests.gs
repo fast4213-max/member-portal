@@ -112,16 +112,20 @@ function submitUpdate_(session, p) {
 function myRequests_(session, p) {
   var id = normIdentity_(p.employee_code, p.birth_date);
   guardVerify_(session);
-  var key = requesterKey_(id.code, id.birth);
-  var items = readAll_('change_requests').filter(function (r) {
+  var items = myRequestItems_(requesterKey_(id.code, id.birth));
+  if (!items.length) recordMiss_(session);
+  return { items: items };
+}
+
+/** 本人の申請の状況（新しい順10件）。中身（住所など）は入れない */
+function myRequestItems_(key) {
+  return readAll_('change_requests').filter(function (r) {
     return r.requester_key === key;
   }).reverse().slice(0, 10).map(function (r) {
     return { request_id: r.request_id, type: r.type, requested_at: r.requested_at, status: r.status,
              statusLabel: STATUS_LABELS[r.status] || r.status, reviewed_at: r.reviewed_at,
              reject_reason: r.status === 'rejected' ? r.reject_reason : '' };
   });
-  if (!items.length) recordMiss_(session);
-  return { items: items };
 }
 
 /** action: cancelRequest（組合員）{ employee_code, birth_date, request_id } → 承認待ちを取り消す */

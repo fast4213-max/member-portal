@@ -39,7 +39,7 @@ function listLogs_(session, p) {
   var cat = LOG_CATEGORIES[p.category] || null;
   var act = str_(p.kind, 40), actor = str_(p.actor, 40);
 
-  var rows = readAll_('audit_log').filter(function (r) {
+  var rows = readLogsFrom_(from).filter(function (r) {
     var day = r.timestamp.slice(0, 10);
     if (from && day < from) return false;
     if (to && day > to) return false;
@@ -50,7 +50,7 @@ function listLogs_(session, p) {
   }).reverse();
 
   var page = pageOf_(rows, p.page, LOG_PAGE_SIZE);
-  var names = targetNames_();
+  var names = targetNames_(page.items.map(function (r) { return r.target_id; }));
   page.items = page.items.map(function (r) {
     return { timestamp: r.timestamp, role: r.role, actor: r.actor, action: r.action,
              target_id: r.target_id, target_name: names[r.target_id] || '', detail: r.detail };
@@ -59,11 +59,29 @@ function listLogs_(session, p) {
   return page;
 }
 
-/** ログの対象ID（台帳ID・申請ID）→ 氏名。ログのシートには氏名を書かず、表示のときだけ引く */
-function targetNames_() {
-  var names = {};
-  readAll_('members').forEach(function (m) { names[m.member_id] = m.sei + ' ' + m.mei; });
+/**
+ * ログを読む。from（'YYYY-MM-DD'）があれば、その日以降の行だけを読む（速度対策）
+ *   ログは追記だけなので時刻の順に並んでいる。まず時刻の列だけを後ろから見て、読み始める行を決める
+ */
+function readLogsFrom_(from) {
+  if (!from) return readAll_('audit_log');
+  var sh = sheet_('audit_log'), n = sh.getLastRow() - 1;
+  if (n <= 0) return [];
+  var ts = sh.getRange(2, 1, n, 1).getDisplayValues();
+  var i = n;
+  while (i > 0 && String(ts[i - 1][0]).slice(0, 10) >= from) i--;
+  if (i === n) return [];
+  var vals = sh.getRange(2 + i, 1, n - i, SHEETS.audit_log.length).getDisplayValues();
+  return rowsToObjects_('audit_log', vals, 2 + i);
+}
+
+/** ログの対象ID（台帳ID・申請ID）→ 氏名。ログのシートには氏名を書かず、表示のときだけ引く（ids：いまのページに出るものだけ） */
+function targetNames_(ids) {
+  var names = {}, want = {};
+  ids.forEach(function (id) { if (id) want[id] = true; });
+  readAll_('members').forEach(function (m) { if (want[m.member_id]) names[m.member_id] = m.sei + ' ' + m.mei; });
   readAll_('change_requests').forEach(function (r) {
+    if (!want[r.request_id]) return;
     try {
       var a = JSON.parse(r.after_json || '{}').member || {};
       names[r.request_id] = (a.sei || '') + ' ' + (a.mei || '');

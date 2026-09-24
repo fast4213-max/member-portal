@@ -250,6 +250,18 @@ function loadReqs(countOnly) {
   }, apiErr);
 }
 
+/**
+ * 承認・却下のあと：一覧から消して、次の申請をすぐ開く（一覧の読み直しと同時に進めるので速い）
+ */
+function nextReq(doneId) {
+  var R = A.req;
+  R.items = (R.items || []).filter(function (x) { return x.request_id !== doneId; });
+  A.pendingCount = R.items.length;
+  R.selId = null; R.detail = null;
+  if (isWide() && R.items.length) selectReq(R.items[0].request_id);
+  loadReqs();
+}
+
 function selectReq(id) {
   var R = A.req;
   R.selId = id; R.detail = null; R.detailErr = ''; R.rejecting = false; R.reason = ''; R.showSheet = false; R.lv = { view: 'list', zoom: false };
@@ -323,8 +335,7 @@ function requestDetail() {
     if (d.stale) { params.ack_stale = true; params.seen_updated_at = d.current_updated_at; }
     withBusy(e.currentTarget, Api.call('approve', params)).then(function () {
       toast('承認して台帳に反映しました');
-      R.selId = null; R.detail = null;
-      loadReqs();
+      nextReq(q.request_id);
     }, function (err) {
       apiErr(err);
       if (err.code === 'superseded' || err.code === 'not_pending') { R.selId = null; R.detail = null; loadReqs(); }
@@ -335,8 +346,7 @@ function requestDetail() {
     if (!R.reason.trim()) { toast('却下の理由を入力してください', 'err'); return; }
     withBusy(e.currentTarget, Api.call('reject', { request_id: q.request_id, reason: R.reason })).then(function () {
       toast('却下しました');
-      R.selId = null; R.detail = null;
-      loadReqs();
+      nextReq(q.request_id);
     }, function (err) {
       apiErr(err);
       if (err.code === 'superseded' || err.code === 'not_pending') { R.selId = null; R.detail = null; loadReqs(); }

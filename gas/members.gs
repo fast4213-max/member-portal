@@ -30,11 +30,11 @@ function identify_(session, p) {
     fail_('not_found', '見つかりません。社員番号と生年月日を確かめてください');
   }
   var key = requesterKey_(id.code, id.birth);
-  var pending = readAll_('change_requests').some(function (r) {
-    return r.requester_key === key && r.status === 'pending';
-  });
+  var mine = myRequestItems_(key);
+  var pending = mine.some(function (r) { return r.status === 'pending'; });
   logAudit_('member', keyLabel_(key), 'view_detail', m.member_id, '本人');
-  return { member: memberView_(m), family: familyView_(familyRows_(m.member_id)), hasPending: pending };
+  // 申請の状況もいっしょに返す（別に myRequests を呼ぶと1往復ぶん遅くなるため）
+  return { member: memberView_(m), family: familyView_(familyRows_(m.member_id)), hasPending: pending, requests: mine };
 }
 
 /**

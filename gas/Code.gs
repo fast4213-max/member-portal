@@ -7,7 +7,7 @@
  * 認証・権限チェック・入力検証はすべてこのGAS側で行う。
  */
 
-var APP_VERSION = '0.3.1';
+var APP_VERSION = '0.3.2';
 
 // action → 必要な権限（null=ログイン不要, 'any'=ログインしていれば誰でも）と処理
 var ROUTES = {
@@ -98,12 +98,17 @@ function fail_(code, message, extra) {
   throw e;
 }
 
+// スクリプトプロパティは1回の実行につき1回だけまとめて読む（速度対策）
+var propCache_ = null;
+
 function prop_(key) {
-  return PropertiesService.getScriptProperties().getProperty(key);
+  if (!propCache_) propCache_ = PropertiesService.getScriptProperties().getProperties();
+  return Object.prototype.hasOwnProperty.call(propCache_, key) ? propCache_[key] : null;
 }
 
 function setProp_(key, value) {
   PropertiesService.getScriptProperties().setProperty(key, value);
+  if (propCache_) propCache_[key] = String(value);
 }
 
 /** 日本時間の 'yyyy-MM-dd HH:mm:ss' */
@@ -134,6 +139,7 @@ function withLock_(fn) {
   if (lockDepth_ > 0) return fn();
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(20000)) fail_('busy', '混み合っています。少し待ってからもう一度お試しください');
+  clearReadCache_();   // 待っている間にほかの人が書いたかもしれないので、読み直す
   lockDepth_++;
   try {
     return fn();

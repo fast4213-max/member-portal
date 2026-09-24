@@ -15,9 +15,20 @@ function ss_() {
 }
 
 function sheet_(name) {
+  if (sheetCache_[name]) return sheetCache_[name];
   var sh = ss_().getSheetByName(name);
   if (!sh) throw new Error('シート「' + name + '」がありません（メニュー「① 初期設定」を実行してください）');
-  return sh;
+  return (sheetCache_[name] = sh);
+}
+
+// ---------- 1回の実行の中だけの読み込みキャッシュ（速度対策）----------
+// スプレッドシートの読み込みは1回ごとに時間がかかるので、同じシートは1回だけ読む。
+// 書き込んだシートと、排他を取った時点（ほかの人が書いたかもしれない）でキャッシュを捨てる。
+var sheetCache_ = {};
+var readCache_ = {};
+
+function clearReadCache_(name) {
+  if (name) delete readCache_[name]; else readCache_ = {};
 }
 
 function esc_(v) {
@@ -31,12 +42,19 @@ function unesc_(s) {
 
 /** シートの全行をオブジェクトの配列で返す（_row に行番号） */
 function readAll_(name) {
-  var sh = sheet_(name), headers = SHEETS[name];
-  var n = sh.getLastRow() - 1;
-  if (n <= 0) return [];
-  var vals = sh.getRange(2, 1, n, headers.length).getDisplayValues();
+  var headers = SHEETS[name], vals = readCache_[name];
+  if (!vals) {
+    var sh = sheet_(name), n = sh.getLastRow() - 1;
+    vals = readCache_[name] = n > 0 ? sh.getRange(2, 1, n, headers.length).getDisplayValues() : [];
+  }
+  return rowsToObjects_(name, vals, 2);
+}
+
+/** 読んだ値（2次元配列）をオブジェクトの配列にする。毎回新しく作るので書き換えてもキャッシュは汚れない */
+function rowsToObjects_(name, vals, firstRow) {
+  var headers = SHEETS[name];
   return vals.map(function (r, i) {
-    var o = { _row: i + 2 };
+    var o = { _row: i + firstRow };
     headers.forEach(function (h, j) { o[h] = unesc_(r[j]); });
     return o;
   });
@@ -49,6 +67,7 @@ function toRow_(name, obj) {
 /** 末尾に行を追加 */
 function appendRows_(name, objs) {
   if (!objs.length) return;
+  clearReadCache_(name);
   var sh = sheet_(name), width = SHEETS[name].length;
   var start = sh.getLastRow() + 1, end = start + objs.length - 1;
   if (end > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), end - sh.getMaxRows());
@@ -60,6 +79,7 @@ function appendRows_(name, objs) {
 /** readAll_ で読んだ行（_row 付き）を書き戻す */
 function updateRow_(name, obj) {
   if (!obj._row) throw new Error('updateRow_: _row がありません');
+  clearReadCache_(name);
   sheet_(name).getRange(obj._row, 1, 1, SHEETS[name].length)
     .setNumberFormat('@')
     .setValues([toRow_(name, obj)]);
@@ -67,6 +87,7 @@ function updateRow_(name, obj) {
 
 /** 行を削除（下の行から消すので行番号がずれない） */
 function deleteRows_(name, rowNumbers) {
+  clearReadCache_(name);
   var sh = sheet_(name);
   rowNumbers.slice().sort(function (a, b) { return b - a; }).forEach(function (r) { sh.deleteRow(r); });
 }

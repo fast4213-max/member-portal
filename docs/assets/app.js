@@ -208,6 +208,8 @@ function start() {
     return;
   }
   Api.load();
+  // GAS はしばらく使われないと起動に数秒かかるので、ページを開いた時点で起こしておく（結果は使わない）
+  Api.call('ping').catch(function () { /* 失敗しても問題なし */ });
   watchIdle_();
   Api.onAuthLost = function (msg) {
     resetMember();

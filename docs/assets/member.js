@@ -393,6 +393,7 @@ SCREENS.verify = {
       }
       var auth = { employee_code: v.code, birth_date: joinDate(v.y, v.m, v.d) };
       withBusy(btn, Api.call('identify', auth).then(function (d) {
+        if (d.requests) { d.reqs = d.requests; return d; }   // GAS 0.3.2 以降は identify が申請の状況も返す
         return Api.call('myRequests', auth).then(function (r) { d.reqs = r.items; return d; }, function () { d.reqs = []; return d; });
       })).then(function (d) {
         M.auth = auth;
