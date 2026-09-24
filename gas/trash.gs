@@ -32,11 +32,12 @@ function deleteMember_(session, p) {
 
 /** action: listTrash（役員）→ 氏名・分会・削除日時・削除した人・完全削除できるか だけ */
 function listTrash_(session, p) {
+  var bunkai = org_().bunkai;
   var items = readAll_('members').filter(isDeleted_).sort(function (a, b) {
     return a.deleted_at < b.deleted_at ? 1 : -1;
   }).map(function (m) {
     var days = daysSince_(m.deleted_at);
-    return { member_id: m.member_id, name: m.sei + ' ' + m.mei, bunkai: BUNKAI,
+    return { member_id: m.member_id, name: m.sei + ' ' + m.mei, bunkai: bunkai,
              deleted_at: m.deleted_at, deleted_by: m.deleted_by,
              canPurge: days >= PURGE_DAYS, daysLeft: Math.max(0, PURGE_DAYS - days) };
   });

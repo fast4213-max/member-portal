@@ -10,6 +10,7 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbx6gf6dE7ayikTDhv0YjtbFQt
 
 var TOKEN_KEY = 'mp_token';
 var ROLE_KEY = 'mp_role';
+var ORG_KEY = 'mp_org';
 
 function ApiError(code, message, extra) {
   this.code = code;
@@ -20,25 +21,30 @@ function ApiError(code, message, extra) {
 var Api = {
   token: null,
   role: null,
+  org: null,          // 組織名（ログイン時に GAS から受け取る。リポジトリには書かない）
   onAuthLost: null,   // ログイン切れのときに呼ばれる（app.js が設定）
 
   load: function () {
     try {
       this.token = sessionStorage.getItem(TOKEN_KEY);
       this.role = sessionStorage.getItem(ROLE_KEY);
+      this.org = JSON.parse(sessionStorage.getItem(ORG_KEY) || 'null');
     } catch (e) { /* 保存できない環境では毎回ログイン */ }
   },
 
-  save: function (token, role) {
+  save: function (token, role, org) {
     this.token = token;
     this.role = role;
+    this.org = org || null;
     try {
       if (token) {
         sessionStorage.setItem(TOKEN_KEY, token);
         sessionStorage.setItem(ROLE_KEY, role);
+        sessionStorage.setItem(ORG_KEY, JSON.stringify(this.org));
       } else {
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(ROLE_KEY);
+        sessionStorage.removeItem(ORG_KEY);
       }
     } catch (e) { /* 無視 */ }
   },
@@ -64,7 +70,7 @@ var Api = {
                              (json && json.message) || 'サーバーでエラーが起きました', json && json.extra);
       // auth：ログイン切れ／locked で「ログアウトしました」：本人確認の失敗が続いてサーバー側でログアウト済み
       if (err.code === 'auth' || (err.code === 'locked' && /ログアウト/.test(err.message))) {
-        self.save(null, null);
+        self.save(null, null, null);
         if (self.onAuthLost) self.onAuthLost(err.message);
       }
       throw err;
@@ -74,3 +80,14 @@ var Api = {
     });
   }
 };
+
+/** 組織名（未設定なら空欄） */
+function orgInfo() {
+  var o = Api.org || {};
+  return { title: o.title || '組合員台帳', honbu: o.honbu || '', branch: o.branch || '', bunkai: o.bunkai || '' };
+}
+
+function orgLine() {
+  var o = orgInfo();
+  return [o.honbu, o.branch, o.bunkai].filter(Boolean).join('　');
+}

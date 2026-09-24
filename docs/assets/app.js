@@ -90,7 +90,7 @@ function loginView() {
     var btn = e.target.querySelector('button[type=submit]');
     if (!S.pw) { toast('パスワードを入力してください', 'err'); return; }
     withBusy(btn, Api.call('login', { role: S.loginTab, password: S.pw })).then(function (d) {
-      Api.save(d.token, d.role);
+      Api.save(d.token, d.role, d.org);
       S.pw = '';
       S.showPw = false;
       if (d.role === 'officer') enterAdmin(); else enterMember();
@@ -106,7 +106,6 @@ function loginView() {
       h('div', { class: 'ring', style: 'right:-60px;top:-20px;width:220px;height:220px' }),
       h('div', { class: 'logo', style: 'width:48px;height:48px;border-radius:14px;color:#fff' }, ico('doc', 26)),
       h('div', { style: 'display:flex;flex-direction:column;gap:10px;position:relative' },
-        h('div', { style: 'font-size:13px;font-weight:600;letter-spacing:.12em;color:#9FB0D9' }, '天王寺車掌区分会'),
         h('h1', { class: 'login-title' }, '組合員台帳', h('br'), 'ポータル'),
         h('p', { style: 'margin:0;font-size:14px;line-height:1.7;color:#C3CDE6' }, '登録・変更の申請はここから。', h('br'), '役員の承認後に台帳へ反映されます。'))),
     h('form', { class: 'login-card', onSubmit: submit },
@@ -129,7 +128,7 @@ function loginView() {
 
 function logout() {
   if (S.screen !== 'login' && Api.token) Api.call('logout').catch(function () { /* 失敗しても画面上はログアウト */ });
-  Api.save(null, null);
+  Api.save(null, null, null);
   resetMember();
   resetAdmin();
   S.dialog = null;

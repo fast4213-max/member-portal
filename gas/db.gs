@@ -99,7 +99,8 @@ function familyRows_(memberId) {
 
 /** 画面に返す本人の項目 */
 function memberView_(m) {
-  var o = { member_id: m.member_id, honbu: HONBU, branch: BRANCH, bunkai: BUNKAI,
+  var org = org_();
+  var o = { member_id: m.member_id, honbu: org.honbu, branch: org.branch, bunkai: org.bunkai,
             created_at: m.created_at, updated_at: m.updated_at };
   MEMBER_FIELDS.forEach(function (f) { o[f.id] = m[f.id] || ''; });
   return o;
@@ -132,7 +133,8 @@ function replaceFamily_(memberId, family) {
 /** 本人の項目を書き込む（m は既存の行、data は新しい内容） */
 function writeMember_(m, data, by) {
   MEMBER_FIELDS.forEach(function (f) { m[f.id] = data[f.id] || ''; });
-  m.honbu = HONBU; m.branch = BRANCH; m.bunkai = BUNKAI;
+  var org = org_();
+  m.honbu = org.honbu; m.branch = org.branch; m.bunkai = org.bunkai;
   m.updated_at = now_();
   m.updated_by = by;
   if (m._row) updateRow_('members', m); else appendRows_('members', [m]);

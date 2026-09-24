@@ -10,6 +10,7 @@ function onOpen() {
     .addItem('① 初期設定（シートを作る）', 'menuSetup')
     .addItem('② 共通パスワードを設定', 'menuSetMemberPassword')
     .addItem('③ 管理パスワードを設定', 'menuSetAdminPassword')
+    .addItem('組織名（台帳の見出し）を設定', 'menuSetOrg')
     .addItem('④ 動作テスト', 'menuSelfTest')
     .addItem('⑤ Web接続テスト（デプロイ後）', 'menuWebTest')
     .addSeparator()
@@ -79,7 +80,7 @@ function menuSetup() {
   }
 
   alert_('初期設定が終わりました', (notes.length ? notes.join('\n') : '変更はありませんでした（設定済み）') +
-         '\n\n次は「② 共通パスワードを設定」です。');
+         '\n\n次は「② 共通パスワードを設定」です。\n（台帳の見出しに出す組織名は「組織名（台帳の見出し）を設定」から）');
 }
 
 // ---------- ②③ パスワード ----------
@@ -101,6 +102,25 @@ function setPasswordFlow_(role, title) {
 
 function menuSetMemberPassword() { setPasswordFlow_('member', '共通パスワード（組合員用）'); }
 function menuSetAdminPassword() { setPasswordFlow_('officer', '管理パスワード（役員用）'); }
+
+// ---------- 組織名 ----------
+
+function menuSetOrg() {
+  var items = [
+    ['ORG_TITLE', '台帳の見出し', '例：〇〇労働組合 組合員台帳'],
+    ['ORG_HONBU', '地方本部', '例：〇〇地方本部'],
+    ['ORG_BRANCH', '支部', '例：〇〇支部'],
+    ['ORG_BUNKAI', '分会', '例：〇〇分会']
+  ];
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i], now = prop_(it[0]);
+    var v = ask_('組織名の設定（' + (i + 1) + '/' + items.length + '）',
+      it[1] + 'を入力してください（' + it[2] + '）。' + (now ? '\n今の設定：' + now + '\n空のままOKで変更しません。' : ''));
+    if (v === null) return;
+    if (v) setProp_(it[0], v.slice(0, 60));
+  }
+  alert_('組織名の設定', '保存しました。次にログインしたときから台帳の見出しに表示されます。');
+}
 
 // ---------- ⑤ Web接続テスト ----------
 
@@ -191,6 +211,7 @@ function menuStatus() {
     '共通パスワード：' + mark('MEMBER_PASS_HASH'),
     '管理パスワード：' + mark('ADMIN_PASS_HASH'),
     'バックアップ先：' + mark('BACKUP_FOLDER_ID'),
+    '組織名：' + mark('ORG_BUNKAI'),
     'LINEトークン：' + (prop_('LINE_TOKENS') ? '✅ ' + JSON.parse(prop_('LINE_TOKENS')).length + '個' : '⬜ 未設定'),
     'LINEグループ：' + mark('LINE_GROUP_ID'),
     'WebアプリURL：' + (prop_('WEBAPP_URL') || '⬜ 未確認'),

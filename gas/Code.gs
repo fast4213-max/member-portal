@@ -7,7 +7,7 @@
  * 認証・権限チェック・入力検証はすべてこのGAS側で行う。
  */
 
-var APP_VERSION = '0.2.0';
+var APP_VERSION = '0.3.0';
 
 // action → 必要な権限（null=ログイン不要, 'any'=ログインしていれば誰でも）と処理
 var ROUTES = {

@@ -22,10 +22,10 @@ function menuSelfTest() {
 function testRecord_(over) {
   var rec = {
     sei: '山田', mei: '太郎', sei_kana: 'やまだ', mei_kana: 'タロウ', gender: '男',
-    birth_date: '1990-4-12', job_title: '車掌', contract_join_date: '', regular_join_date: '2012-4-1',
-    tel_home: '', tel_mobile: '０９０－００００－００００', zip: '0000000', address: '大阪府大阪市〇〇区〇〇町1-2-3',
+    birth_date: '1990-4-12', job_title: '事務', contract_join_date: '', regular_join_date: '2012-4-1',
+    tel_home: '', tel_mobile: '０９０－００００－００００', zip: '0000000', address: '〇〇県〇〇市〇〇町1-2-3',
     family_zip: '', family_address: '', family_tel: '', employee_code: TEST_CODE,
-    station_home_line: '大阪環状線', station_home: '天王寺', station_family_line: '', station_family: '',
+    station_home_line: '〇〇線', station_home: '〇〇', station_family_line: '', station_family: '',
     kyosai_sogo: '加入済', kyosai_kyuen: '加入済', kotsu_seisaku: '未加入', kyosai_kazoku: '不明',
     prev_workplace: '', officer_exp: '無', officer_when: '', officer_detail: ''
   };
@@ -105,7 +105,7 @@ function runSelfTest_() {
 
   step('新規申請を2回 → 1回目は置き換え済み、承認待ちは1件だけ', function () {
     ctx.first = submitCreate_(sm, { record: testRecord_(), family: TEST_FAMILY }).request_id;
-    var second = submitCreate_(sm, { record: testRecord_({ job_title: '車掌（2回目）' }), family: TEST_FAMILY });
+    var second = submitCreate_(sm, { record: testRecord_({ job_title: '事務（2回目）' }), family: TEST_FAMILY });
     ctx.create = second.request_id;
     ok(second.replaced === 1, '置き換え件数 ' + second.replaced);
     ok(myPending().length === 1, '承認待ち ' + myPending().length + '件');
@@ -131,7 +131,7 @@ function runSelfTest_() {
 
   step('更新：本人確認OKで現在の内容が返る', function () {
     var r = identify_(sm, { employee_code: TEST_CODE, birth_date: '1990年4月12日' });
-    ok(r.member.job_title === '車掌（2回目）', '職名 ' + r.member.job_title);
+    ok(r.member.job_title === '事務（2回目）', '職名 ' + r.member.job_title);
     ok(r.family.length === 2, '家族 ' + r.family.length + '人');
   });
 
@@ -150,7 +150,7 @@ function runSelfTest_() {
   step('更新申請：何も変えていなければ受け付けない', function () {
     expectFail('no_change', function () {
       submitUpdate_(sm, { auth: { employee_code: TEST_CODE, birth_date: TEST_BIRTH },
-                          record: testRecord_({ job_title: '車掌（2回目）' }), family: TEST_FAMILY });
+                          record: testRecord_({ job_title: '事務（2回目）' }), family: TEST_FAMILY });
     });
   });
 
@@ -167,7 +167,7 @@ function runSelfTest_() {
 
   step('却下：理由なしは不可 → 理由ありで却下 → 本人の申請状況に理由が出る', function () {
     var auth = { employee_code: TEST_CODE, birth_date: TEST_BIRTH };
-    var rid = submitUpdate_(sm, { auth: auth, record: testRecord_({ tel_mobile: '080-0000-1111', address: '大阪府〇〇市' }), family: TEST_FAMILY }).request_id;
+    var rid = submitUpdate_(sm, { auth: auth, record: testRecord_({ tel_mobile: '080-0000-1111', address: '〇〇県△△市' }), family: TEST_FAMILY }).request_id;
     expectFail('invalid', function () { reject_(so, { request_id: rid, reason: '' }); });
     reject_(so, { request_id: rid, reason: '住所の番地が抜けています' });
     var mine = myRequests_(sm, auth).items[0];
@@ -202,12 +202,12 @@ function runSelfTest_() {
 
   step('役員の直接編集（開いたあとに更新されていたら止める → 正しく保存 → 履歴から戻せる）', function () {
     var cur = getMember_(so, { member_id: ctx.memberId });
-    var rec = testRecord_({ tel_mobile: '080-0000-1111', job_title: '運転士' });
+    var rec = testRecord_({ tel_mobile: '080-0000-1111', job_title: '営業' });
     expectFail('stale', function () {
       updateMember_(so, { member_id: ctx.memberId, base_updated_at: '2000-01-01 00:00:00', record: rec, family: TEST_FAMILY });
     });
     updateMember_(so, { member_id: ctx.memberId, base_updated_at: cur.member.updated_at, record: rec, family: TEST_FAMILY });
-    ok(findMemberById_(ctx.memberId).job_title === '運転士', '反映されていない');
+    ok(findMemberById_(ctx.memberId).job_title === '営業', '反映されていない');
     var hist = listHistory_(so, { member_id: ctx.memberId }).items;
     ok(hist[0].reason === 'edit', '履歴 ' + hist[0].reason);
     rollback_(so, { history_id: hist[0].history_id });
@@ -242,7 +242,7 @@ function runSelfTest_() {
 
   step('行動ログに住所・電話の値が書かれていない', function () {
     var bad = readAll_('audit_log').filter(function (l) {
-      return /080-0000|090-0000|大阪府|住所の番地/.test(l.detail);
+      return /080-0000|090-0000|〇〇県|住所の番地/.test(l.detail);
     });
     ok(bad.length === 0, bad.length + '件');
   });

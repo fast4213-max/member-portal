@@ -137,14 +137,13 @@ function buildSheet(opts) {
        h('span', { style: 'margin-left:8px' }, '（所属箇所と役職）'), v_(r.officer_detail, 'font-size:13px')));
 
   return h('div', { class: 'sheet' },
-    h('div', { style: 'text-align:center;font-size:19px;font-weight:700;letter-spacing:.06em' }, '西日本旅客鉄道労働組合（JR西労組）組合員台帳'),
+    h('div', { style: 'text-align:center;font-size:19px;font-weight:700;letter-spacing:.06em' }, orgInfo().title),
     h('div', { style: 'display:flex;justify-content:space-between;font-size:12.5px' },
-      h('div', { style: 'letter-spacing:.06em' }, HONBU_BRANCH_BUNKAI),
+      h('div', { style: 'letter-spacing:.06em' }, orgLine()),
       h('div', null, v_(madeY), ' 年 ', v_(madeM), ' 月 ', v_(madeD), ' 日 作成')),
     top, famGrid, kyosai, bottom);
 }
 
-var HONBU_BRANCH_BUNKAI = '大阪地方本部　天王寺支部　天王寺車掌区分会';
 
 /**
  * 台帳を幅に合わせて縮小表示する入れ物。zoomed=true なら原寸（横スクロール）
@@ -189,7 +188,7 @@ function buildReadable(opts) {
 
   return h('div', { class: 'rd' },
     h('div', { class: 'rd-head' },
-      h('div', { class: 'rd-org' }, HONBU_BRANCH_BUNKAI),
+      h('div', { class: 'rd-org' }, orgLine()),
       h('div', { class: 'h rd-name' }, nm_(r)),
       h('div', { class: 'num-t rd-sub' }, kn_(r) + '・社員番号 ' + (r.employee_code || ''))),
     sec('基本情報', [

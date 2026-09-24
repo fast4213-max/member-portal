@@ -6,6 +6,7 @@
  *   MEMBER_PASS_HASH … 共通パスワードのハッシュ
  *   ADMIN_PASS_HASH  … 管理パスワードのハッシュ
  *   TOKEN_EPOCH      … 数字。増やすと全員のログインが無効になる
+ *   ORG_TITLE / ORG_HONBU / ORG_BRANCH / ORG_BUNKAI … 組織名（schema.gs の org_()）
  */
 
 var SESSION_HOURS = 6;               // ログインの有効時間（CacheService の上限が6時間）
@@ -66,7 +67,8 @@ function login_(_, p) {
   var session = { role: role, actor: ROLE_NAMES[role], epoch: prop_('TOKEN_EPOCH') || '0' };
   CacheService.getScriptCache().put('tok:' + token, JSON.stringify(session), SESSION_HOURS * 3600);
   logAudit_(role, session.actor, 'login_ok', '', '');
-  return { token: token, role: role, expiresIn: SESSION_HOURS * 3600 };
+  // 組織名はログインした人にだけ返す（ログイン前の画面には出さない）
+  return { token: token, role: role, expiresIn: SESSION_HOURS * 3600, org: org_() };
 }
 
 /** トークンからセッションを取り出す。無効なら null */

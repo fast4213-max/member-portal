@@ -151,7 +151,7 @@ SCREENS.menu = {
     };
     return h('div', { class: 'wrap', style: 'gap:18px' },
       h('div', { style: 'display:flex;flex-direction:column;gap:6px;padding-top:8px' },
-        h('div', { style: 'font-size:13px;font-weight:600;color:#5A6475' }, '天王寺車掌区分会'),
+        orgInfo().bunkai ? h('div', { style: 'font-size:13px;font-weight:600;color:#5A6475' }, orgInfo().bunkai) : null,
         h('h2', { class: 'ttl', style: 'font-size:26px' }, 'どちらの手続きですか？')),
       h('div', { class: 'cards' },
         card('personAdd', '#EEF1FC', '#1F3FBF', '新規登録', 'はじめて台帳に登録する方', function () {
@@ -278,7 +278,7 @@ function formSections() {
       fld('性別', true, seg(f, 'gender', ['男', '女'])),
       errP('gender'),
       h('label', { class: 'fld' }, h('span', { class: 'lb' }, '職名', h('em', { class: 'req' }, '必須')),
-        inp('job_title', { ph: '例：車掌', max: 30 })),
+        inp('job_title', { ph: '例：〇〇', max: 30 })),
       errP('job_title'),
       fld('契約社員入社年月日', '該当者のみ', dateIn('contract', 'contract', '契約社員入社', ['2010', '4', '1'])),
       errP('contract'),
@@ -329,7 +329,7 @@ function formSections() {
       kyosai.map(function (k) { return fld(k[1], true, seg(f, k[0], ['加入済', '未加入', '不明'])); }),
       errP('kyosai')
     ]),
-    section('8', '前職場', inp('prev_workplace', { ph: '例：〇〇車掌区', label: '前職場', max: 50 }), '任意'),
+    section('8', '前職場', inp('prev_workplace', { ph: '例：〇〇', label: '前職場', max: 50 }), '任意'),
     section('9', '組合役員経験', [
       seg(f, 'officer_exp', ['無', '有'], function () { if (f.officer_exp !== '有') { f.officer_when = ''; f.officer_detail = ''; } }),
       f.officer_exp === '有' ? h('div', { style: 'display:flex;flex-direction:column;gap:14px;padding:14px;border-radius:12px;background:#F6F7FB' },

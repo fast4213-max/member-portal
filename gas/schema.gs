@@ -4,10 +4,19 @@
  * 入力検証はここ（GAS側）が本体。画面側のチェックは使いやすさのためだけ。
  */
 
-// 固定値（台帳に表示するだけ）
-var HONBU = '大阪地方本部';
-var BRANCH = '天王寺支部';
-var BUNKAI = '天王寺車掌区分会';
+/**
+ * 組織名（台帳の見出し・地方本部・支部・分会）
+ * 公開リポジトリに組織名を残さないため、コードには書かずスクリプトプロパティに置く。
+ * 設定はスプレッドシートのメニュー「組織名を設定」から。未設定なら空欄で表示される。
+ */
+function org_() {
+  return {
+    title: prop_('ORG_TITLE') || '組合員台帳',
+    honbu: prop_('ORG_HONBU') || '',
+    branch: prop_('ORG_BRANCH') || '',
+    bunkai: prop_('ORG_BUNKAI') || ''
+  };
+}
 
 var FAMILY_MAX = 10;               // 紙の台帳の枠が10人分
 var KYOSAI_CHOICES = ['加入済', '未加入', '不明'];
