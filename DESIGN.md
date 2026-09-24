@@ -156,25 +156,34 @@
 
 ## 4. API（GAS doPost の action 一覧）
 
-| action | 権限 | 内容 |
+送信 `{action, token, …}` → 返信 `{ok:true, data}` / `{ok:false, error:コード, message:日本語, extra?}`（実装は `gas/`）
+
+| action | 権限 | パラメータ → 返すもの |
 |---|---|---|
-| login | なし | パスワード照合 → トークン発行（role, officer_id） |
-| logout | 全員 | トークン破棄 |
-| checkDuplicate | member | 社員コード＋生年月日が登録済みか（true/false のみ返す） |
-| identify | member | 社員コード＋生年月日 → 本人の台帳を返す |
-| submitCreate | member | 新規登録（申請） |
-| submitUpdate | member | 更新（申請） |
-| myRequests / cancelRequest | member | 自分の申請状況・取消 |
-| listMembers | officer | 行（あ〜わ）・氏名検索・ページ → 社員番号/氏名/カナ/年齢/更新日のみ（未登録＝承認待ちの新規は出さない） |
-| getMember | officer | 1人分の全項目＋家族（毎回ログ記録） |
-| listRequests / approve / reject | officer | 承認待ち・承認・却下 |
-| deleteMember / restoreMember | officer | ゴミ箱（論理削除・復元） |
-| listLogs | officer | 行動ログ（絞り込み・50件ずつ） |
+| ping | なし | → `{version}`（接続確認） |
+| login | なし | `role`(member/officer), `password` → `{token, role, expiresIn}` |
+| logout | 全員 | → null |
+| checkDuplicate | member | `employee_code, birth_date` → `{registered}` のみ |
+| identify | member | `employee_code, birth_date` → `{member, family, hasPending}`（不一致は not_found） |
+| submitCreate | member | `record, family` → `{request_id, replaced}` |
+| submitUpdate | member | `auth:{employee_code, birth_date}, record, family` → `{request_id, replaced}` |
+| myRequests | member | `employee_code, birth_date` → 状況と却下理由だけ（新しい順10件） |
+| cancelRequest | member | `employee_code, birth_date, request_id` |
+| listMembers | officer | `row`(a/ka/sa/ta/na/ha/ma/ya/ra/wa), `q`, `page` → 社員番号・氏名・カナ・年齢・更新日のみ、50件ずつ |
+| getMember | officer | `member_id` → 全項目＋家族（毎回ログ） |
+| listRequests | officer | → 承認待ちの概要（変更項目名・stale・連続却下回数） |
+| getRequest | officer | `request_id` → いまの台帳（before）と申請内容（after）、変更項目 |
+| approve | officer | `request_id`（stale のときは `ack_stale:true, seen_updated_at`） |
+| reject | officer | `request_id, reason`（理由必須） |
+| deleteMember / restoreMember | officer | `member_id` |
+| listTrash | officer | → 氏名・分会・削除日時・削除者・完全削除できるか |
+| purgeMember | officer | `member_id, password`（90日経過後のみ・実行前に自動バックアップ） |
+| listHistory / rollback | officer | `member_id` → 履歴一覧 / `history_id` → その版に戻す |
+| listLogs | officer | `from, to, category, kind, actor, page` → 新しい順50件（氏名は表示時に引く） |
 
-- 全actionの先頭で「トークン検証 → 権限チェック」。失敗は audit_log に記録
-- `checkDuplicate`/`identify` は1トークンあたりの回数制限をかける（他人の社員コード・生年月日の総当たり対策）
-
----
+- 全actionの先頭で「トークン検証 → 権限チェック」。権限外は `denied` として audit_log に記録
+- 本人確認（checkDuplicate / identify / submitUpdate / myRequests / cancelRequest）の失敗は1ログインあたり5回でログアウト、全体で1時間300回で一時停止
+- 申請は1人（requester_key）1日20回まで
 
 ## 5. ファイル構成
 
@@ -190,6 +199,9 @@ member-portal/
 ├── gas/
 │   ├── Code.gs  auth.gs  members.gs  requests.gs  trash.gs
 │   ├── audit.gs  line.gs  backup.gs  appsscript.json
+│   ├── schema.gs（項目定義・入力検証） db.gs（シート読み書き）
+│   ├── setup.gs（スプレッドシートのメニュー） test.gs（動作テスト）
+│   └── SETUP.md（セットアップ手順）
 ├── DESIGN.md                  # この設計書
 ├── README.md / SECURITY.md
 └── .gitignore
