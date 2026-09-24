@@ -7,7 +7,7 @@ var M;
 
 function resetMember() {
   M = {
-    mode: 'new',             // 'new' | 'update'
+    mode: 'new',             // 'new' | 'update' | 'edit'（edit は役員の直接編集）
     f: clone(EMPTY_FORM),
     fam: [],
     base: null, baseFam: null,   // 更新：いまの台帳（変更箇所の黄色表示に使う）
@@ -341,7 +341,7 @@ function formSections() {
 }
 
 function formBar() {
-  var show = M.mode === 'update' || M.idState === 'ok';
+  var show = M.mode !== 'new' || M.idState === 'ok';
   if (!show) return null;
   var msg = barMessage();
   return h('div', { class: 'bbar' }, h('div', { class: 'bbar-in' },
@@ -490,35 +490,39 @@ SCREENS.update = {
 
 function currentRecord() { return formToRecord(M.f); }
 
+function editScreen() { return M.mode === 'update' ? 'update' : M.mode === 'edit' ? 'a-edit' : 'new'; }
+
 function noChanges() {
-  if (M.mode !== 'update') return false;
+  if (M.mode === 'new') return false;
   var a = currentRecord(), b = M.base;
   var same = Object.keys(a).every(function (k) { return String(a[k] || '') !== String(b[k] || '') ? false : true; });
   return same && JSON.stringify(familyToRecord(M.fam).map(famKey_)) === JSON.stringify((M.baseFam || []).map(famKey_));
 }
 
 SCREENS.confirm = {
-  title: '内容の確認',
-  back: function () { go(M.mode === 'update' ? 'update' : 'new'); },
+  title: function () { return M.mode === 'edit' ? '編集内容の確認' : '内容の確認'; },
+  back: function () { go(editScreen()); },
   view: function () {
     var today = new Date();
     var made = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
     var opts = { rec: currentRecord(), fam: familyToRecord(M.fam), madeAt: made };
-    if (M.mode === 'update') { opts.base = M.base; opts.baseFam = M.baseFam; }
+    if (M.mode !== 'new') { opts.base = M.base; opts.baseFam = M.baseFam; }
     return h('div', { class: 'wrap w-sheet' },
       h('div', { style: 'display:flex;flex-direction:column;gap:4px;padding:0 4px' },
-        h('h2', { class: 'ttl' }, '内容の確認'),
-        h('p', { class: 'lead' }, M.mode === 'update'
+        h('h2', { class: 'ttl' }, M.mode === 'edit' ? '編集内容の確認' : '内容の確認'),
+        h('p', { class: 'lead' }, M.mode !== 'new'
           ? '紙の台帳と同じ形で表示しています。変更した所は黄色になっています。'
           : '紙の台帳と同じ形で表示しています。間違いがないか確認してください。')),
       ledgerView(opts, M.lv, render),
       noChanges() ? h('div', { class: 'note red' }, '変更がありません。「修正する」から戻って変更してください。') : null,
-      note('blue', 'info', '内容に間違いがなければ「この内容で申請する」を押してください。間違えた場合は、もう一度申請すれば前回の申請は破棄され、新しい内容に更新されます。'));
+      M.mode === 'edit'
+        ? note('orange', 'info', '「保存する」を押すと、承認なしですぐ台帳に反映されます。変更前の内容は変更履歴に残るので、あとで元に戻せます。')
+        : note('blue', 'info', '内容に間違いがなければ「この内容で申請する」を押してください。間違えた場合は、もう一度申請すれば前回の申請は破棄され、新しい内容に更新されます。'));
   },
   bar: function () {
     return h('div', { class: 'bbar' }, h('div', { class: 'bbar-in', style: 'display:grid;grid-template-columns:1fr 2fr' },
       h('button', { type: 'button', class: 'btn sec', onClick: SCREENS.confirm.back }, '修正する'),
-      h('button', { type: 'button', class: 'btn pri', disabled: noChanges(), onClick: submitRequest }, 'この内容で申請する')));
+      h('button', { type: 'button', class: 'btn pri', disabled: noChanges(), onClick: submitRequest }, M.mode === 'edit' ? '保存する' : 'この内容で申請する')));
   }
 };
 
@@ -526,14 +530,24 @@ function submitRequest(e) {
   var params = { record: currentRecord(), family: familyToRecord(M.fam) };
   var action = 'submitCreate';
   if (M.mode === 'update') { action = 'submitUpdate'; params.auth = M.auth; }
+  if (M.mode === 'edit') { action = 'updateMember'; params.member_id = M.base.member_id; params.base_updated_at = M.base.updated_at; }
   withBusy(e.currentTarget, Api.call(action, params)).then(function (d) {
+    if (M.mode === 'edit') {
+      toast('保存しました。台帳に反映されています');
+      openLedger(M.base.member_id);
+      resetMember();
+      return;
+    }
     M.done = d;
     go('done');
   }, function (err) {
-    if (err.code === 'invalid' && err.extra && err.extra.errors) {
+    if (M.mode === 'edit' && err.code === 'stale') {
+      toast(err.message, 'err');
+      openLedger(M.base.member_id);
+    } else if (err.code === 'invalid' && err.extra && err.extra.errors) {
       M.tried = true;
       M.errs = serverErrors(err.extra.errors);
-      go(M.mode === 'update' ? 'update' : 'new');
+      go(editScreen());
       scrollToError();
       toast(err.message, 'err');
     } else if (err.code === 'registered') {
@@ -564,4 +578,43 @@ SCREENS.done = {
       note('orange', 'restore', '間違えた場合は、もう一度申請してください。前回の申請は破棄され、新しい内容に更新されます（役員が承認する前まで）。', 'text-align:left'),
       h('button', { type: 'button', class: 'btn pri full', onClick: function () { resetMember(); go('menu'); } }, 'メニューへ戻る'));
   }
+};
+
+// ---------- 役員：台帳の直接編集 ----------
+
+function startEdit(member, family) {
+  resetMember();
+  M.mode = 'edit';
+  M.base = member;
+  M.baseFam = family;
+  M.f = recordToForm(member);
+  M.fam = recordToFamily(family);
+  go('a-edit');
+}
+
+SCREENS['a-edit'] = {
+  title: '台帳の編集',
+  back: function () {
+    var id = M.base.member_id;
+    resetMember();
+    openLedger(id);
+  },
+  view: function () {
+    var b = M.base;
+    return h('div', { class: 'wrap' },
+      h('div', { style: 'display:flex;flex-direction:column;gap:4px;padding:0 4px' },
+        h('h2', { class: 'ttl' }, b.sei + ' ' + b.mei + ' さんの台帳を編集'),
+        h('p', { class: 'lead' }, '役員による直接の修正です。承認なしで反映され、変更前の内容は変更履歴に残ります。')),
+      section('0', '社員番号と生年月日', [
+        h('label', { class: 'fld' },
+          h('span', { class: 'lb' }, '社員番号', h('em', { class: 'req' }, '必須')),
+          inp('employee_code', { mode: 'numeric', ph: '7桁の数字', style: 'letter-spacing:.12em', max: 10 })),
+        errP('employee_code'),
+        fld('生年月日（西暦）', true, dateIn('birth', 'birth', '生年月日', ['1990', '1', '1'])),
+        errP('birth'),
+        h('p', { style: 'margin:0;font-size:12.5px;color:#5A6475;line-height:1.6' },
+          '本人確認に使う項目です。訂正するときだけ変更してください。')]),
+      formSections());
+  },
+  bar: formBar
 };

@@ -7,7 +7,7 @@
  * 認証・権限チェック・入力検証はすべてこのGAS側で行う。
  */
 
-var APP_VERSION = '0.1.0';
+var APP_VERSION = '0.2.0';
 
 // action → 必要な権限（null=ログイン不要, 'any'=ログインしていれば誰でも）と処理
 var ROUTES = {
@@ -26,6 +26,7 @@ var ROUTES = {
   // 役員（管理パスワードでログイン）
   listMembers:    { role: 'officer', fn: listMembers_ },
   getMember:      { role: 'officer', fn: getMember_ },
+  updateMember:   { role: 'officer', fn: updateMember_ },
   listRequests:   { role: 'officer', fn: listRequests_ },
   getRequest:     { role: 'officer', fn: getRequest_ },
   approve:        { role: 'officer', fn: approve_ },

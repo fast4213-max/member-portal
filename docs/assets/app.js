@@ -153,7 +153,8 @@ var ADMIN_NAV = [
 ];
 
 function navActive_(key) {
-  return S.screen === key || (key === 'a-list' && S.screen === 'a-ledger');
+  return S.screen === key ||
+    (key === 'a-list' && (S.screen === 'a-ledger' || S.screen === 'a-edit' || (S.screen === 'confirm' && M.mode === 'edit')));
 }
 
 function sideNav() {
@@ -196,7 +197,7 @@ function start() {
   };
   window.matchMedia('(min-width: 900px)').addEventListener('change', function () { render(); });
   window.addEventListener('beforeunload', function (e) {
-    if (['new', 'update', 'confirm'].indexOf(S.screen) >= 0) { e.preventDefault(); e.returnValue = ''; }
+    if (['new', 'update', 'confirm', 'a-edit'].indexOf(S.screen) >= 0) { e.preventDefault(); e.returnValue = ''; }
   });
   if (Api.token && Api.role === 'officer') enterAdmin();
   else if (Api.token && Api.role === 'member') enterMember();

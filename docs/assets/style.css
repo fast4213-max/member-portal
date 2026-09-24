@@ -213,7 +213,7 @@ button{-webkit-tap-highlight-color:transparent}
 .busy{position:fixed;left:0;top:0;height:3px;width:0;background:#1F3FBF;z-index:30;opacity:0;transition:opacity .2s}
 .busy.show{opacity:1;width:100%;background:linear-gradient(90deg,#1F3FBF 0,#8FA3F0 50%,#1F3FBF 100%);background-size:200% 100%;animation:busy 1s linear infinite}
 @keyframes busy{from{background-position:200% 0}to{background-position:0 0}}
-.toast-fixed{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);max-width:calc(100% - 32px);width:max-content;padding:12px 18px;border-radius:12px;font-family:"IBM Plex Sans JP",sans-serif;font-size:14px;font-weight:600;line-height:1.5;box-shadow:0 12px 32px rgba(14,23,38,.2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:40}
+.toast-fixed{position:fixed;left:50%;top:76px;transform:translate(-50%,-12px);max-width:calc(100% - 32px);width:max-content;padding:12px 18px;border-radius:12px;font-family:"IBM Plex Sans JP",sans-serif;font-size:14px;font-weight:600;line-height:1.5;box-shadow:0 12px 32px rgba(14,23,38,.2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:40}
 .toast-fixed.show{opacity:1;transform:translate(-50%,0)}
 .toast-fixed.ok{background:#0F7B5F;color:#fff}
 .toast-fixed.err{background:#B42318;color:#fff}
@@ -254,4 +254,7 @@ select.in{appearance:auto}
 .btn.sec{display:inline-flex;flex-direction:row;gap:8px;padding:0 20px;border-radius:12px}
 .btn.sec.sm{padding:0 16px;border-radius:10px}
 /* スマホでは下のボタン・タブに重ならない位置に出す */
-@media (max-width:899.98px){.toast-fixed{bottom:104px}}
+/* お知らせは上のバーのすぐ下に出す（下のボタン・タブに重ならない） */
+/* 台帳：家族の氏名欄（上にフリガナ・下に氏名） */
+.fam-kana{height:17px;padding:0 7px;border-bottom:1px dotted #999;display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap}
+.fam-nm{flex:1 1 auto;padding:0 7px;display:flex;align-items:center;min-width:0;overflow:hidden;white-space:nowrap}

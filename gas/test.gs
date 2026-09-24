@@ -200,6 +200,20 @@ function runSelfTest_() {
     ok(findMemberById_(ctx.memberId).prev_workplace === '', '戻っていない');
   });
 
+  step('役員の直接編集（開いたあとに更新されていたら止める → 正しく保存 → 履歴から戻せる）', function () {
+    var cur = getMember_(so, { member_id: ctx.memberId });
+    var rec = testRecord_({ tel_mobile: '080-0000-1111', job_title: '運転士' });
+    expectFail('stale', function () {
+      updateMember_(so, { member_id: ctx.memberId, base_updated_at: '2000-01-01 00:00:00', record: rec, family: TEST_FAMILY });
+    });
+    updateMember_(so, { member_id: ctx.memberId, base_updated_at: cur.member.updated_at, record: rec, family: TEST_FAMILY });
+    ok(findMemberById_(ctx.memberId).job_title === '運転士', '反映されていない');
+    var hist = listHistory_(so, { member_id: ctx.memberId }).items;
+    ok(hist[0].reason === 'edit', '履歴 ' + hist[0].reason);
+    rollback_(so, { history_id: hist[0].history_id });
+    ok(findMemberById_(ctx.memberId).job_title === cur.member.job_title, '戻っていない');
+  });
+
   step('ゴミ箱：削除 → 一覧から消える → 90日前は完全削除不可 → 復元', function () {
     deleteMember_(so, { member_id: ctx.memberId });
     ok(listMembers_(so, { q: TEST_CODE }).items.length === 0, '一覧に残っている');

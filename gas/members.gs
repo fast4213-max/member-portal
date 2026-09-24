@@ -118,3 +118,32 @@ function rollback_(session, p) {
     return { member_id: m.member_id, updated_at: m.updated_at };
   });
 }
+
+/**
+ * action: updateMember（役員）{ member_id, base_updated_at, record, family }
+ *   役員が台帳を直接直す（承認なしで反映）。変更前の内容は履歴に残すので rollback で戻せる
+ *   開いたあとに誰かが台帳を変えていたら（updated_at が違えば）上書きせずに止める
+ */
+function updateMember_(session, p) {
+  var rec = normalizeRecord_(p.record, p.family);
+  return withLock_(function () {
+    var m = findMemberById_(p.member_id);
+    if (!m || isDeleted_(m)) fail_('not_found', '台帳が見つかりません（削除された可能性があります）');
+    if (m.updated_at !== String(p.base_updated_at || '')) {
+      fail_('stale', '編集している間に台帳が更新されました。台帳を開き直してから、もう一度編集してください');
+    }
+    if (codeUsedByOther_(rec.member.employee_code, m.member_id)) {
+      fail_('duplicate', 'その社員番号は別の台帳で使われています');
+    }
+    var before = snapshot_(m);
+    var fields = changedFields_(before.member, rec.member);
+    var famChanged = familyChanged_(before.family, rec.family);
+    if (!fields.length && !famChanged) fail_('no_change', '変更された項目がありません');
+
+    addHistory_(m.member_id, session.actor, 'edit', before);
+    writeMember_(m, rec.member, session.actor);
+    replaceFamily_(m.member_id, rec.family);
+    logAudit_(session.role, session.actor, 'edit', m.member_id, changedLabels_(fields, famChanged));
+    return { member_id: m.member_id, updated_at: m.updated_at };
+  });
+}

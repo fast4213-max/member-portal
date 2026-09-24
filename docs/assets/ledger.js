@@ -88,7 +88,7 @@ function buildSheet(opts) {
        h('span', { style: 'font-size:11px' }, '〒 ', v_(r.family_zip)), v_(r.family_address, 'font-size:13px')),
     c_(H('ftel'), 'grid-column:6/8;gap:8px', h('span', { style: 'font-size:11px' }, '電話'), v_(r.family_tel)),
 
-    c_('lab', 'height:44px', '社員コード'),
+    c_('lab', 'height:44px;font-size:10px;letter-spacing:0', '社員コード'),
     c_('lv ' + H('code'), 'font-size:14px;letter-spacing:.14em', r.employee_code || ''),
     c_('lab', 'grid-column:3/5', '最寄駅'),
     c_(H('st'), 'grid-column:5/8;gap:6px;font-size:11.5px;flex-wrap:wrap',
@@ -98,17 +98,20 @@ function buildSheet(opts) {
 
   var famGrid = h('div', { class: 'g', style: 'grid-template-columns:minmax(0,1fr) 84px 32px 38px 34px minmax(0,1fr) 84px 32px 38px 34px' },
     c_('lab', 'grid-column:1/11;height:28px;font-size:12.5px;letter-spacing:.6em', 'ご家族構成'));
+  // 見出し：高さをそろえ、狭い列（性別・続柄・同別）は1行に収める
   for (var k = 0; k < 2; k++) {
     ['氏　名', '生年月日', '性別', '続柄', '同別'].forEach(function (t, i) {
-      famGrid.appendChild(c_('lab', i === 0 ? 'height:24px' : '', t));
+      famGrid.appendChild(c_('lab', 'height:26px;padding:0 2px;letter-spacing:0;white-space:nowrap' + (i >= 2 ? ';font-size:10px' : ''), t));
     });
   }
   // 紙と同じく左列に1〜5人目、右列に6〜10人目
   for (var row = 0; row < 5; row++) {
     [row, row + 5].forEach(function (i) {
       var m = fam[i] || {}, cls = famHl_(fam, opts.baseFam, i) ? 'hl' : '';
-      famGrid.appendChild(c_(cls, 'height:50px;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px',
-        h('span', { style: 'font-size:9.5px' }, 'カナ ', v_(kn_(m), 'font-size:10px')), v_(nm_(m), 'font-size:13.5px')));
+      // 氏名欄は紙と同じく上にフリガナ（点線で区切る）、下に氏名
+      famGrid.appendChild(c_(cls + ' fam-name', 'height:50px;padding:0;flex-direction:column;align-items:stretch',
+        h('div', { class: 'fam-kana' }, v_(kn_(m), 'font-size:10px')),
+        h('div', { class: 'fam-nm' }, v_(nm_(m), 'font-size:13.5px'))));
       famGrid.appendChild(c_('lv ' + cls, 'justify-content:center;font-size:10.5px;text-align:center', fmtDate(m.birth_date)));
       famGrid.appendChild(c_('lv ' + cls, 'justify-content:center', m.gender || ''));
       famGrid.appendChild(c_('lv ' + cls, 'justify-content:center', m.relationship || ''));

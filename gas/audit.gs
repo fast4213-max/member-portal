@@ -11,7 +11,7 @@ var LOG_CATEGORIES = {
   login:   ['login_ok', 'login_fail', 'lockout', 'denied'],
   view:    ['view_list', 'view_detail', 'view_log', 'export'],
   request: ['request_create', 'request_update', 'request_supersede', 'request_cancel', 'request_limit'],
-  review:  ['approve', 'reject'],
+  review:  ['approve', 'reject', 'edit'],
   trash:   ['delete', 'restore', 'purge', 'rollback']
 };
 

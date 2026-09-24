@@ -32,13 +32,13 @@ var ACTIONS = {
   view_list: ['一覧表示', 'view'], view_detail: ['詳細表示', 'view'], view_log: ['ログ閲覧', 'view'], 'export': ['書き出し', 'view'],
   request_create: ['新規申請', 'request'], request_update: ['更新申請', 'request'], request_supersede: ['申請置換', 'request'],
   request_cancel: ['申請取消', 'request'], request_limit: ['申請回数超過', 'warn'],
-  approve: ['承認', 'review'], reject: ['却下', 'review'],
+  approve: ['承認', 'review'], reject: ['却下', 'review'], edit: ['役員が編集', 'review'],
   'delete': ['削除', 'trash'], restore: ['復元', 'trash'], purge: ['完全削除', 'trash'], rollback: ['以前の版に戻す', 'trash']
 };
 
 var ROW_CHIPS = [['', 'すべて'], ['a', 'あ'], ['ka', 'か'], ['sa', 'さ'], ['ta', 'た'], ['na', 'な'], ['ha', 'は'], ['ma', 'ま'], ['ya', 'や'], ['ra', 'ら'], ['wa', 'わ']];
 var LOG_CATS = [['all', 'すべて'], ['login', 'ログイン'], ['view', '閲覧'], ['request', '申請'], ['review', '承認・却下'], ['trash', '削除・復元']];
-var HISTORY_LABELS = { approve: '承認で更新（更新前の内容）', rollback: '以前の版に戻した（戻す前の内容）', 'delete': 'ゴミ箱へ移動（その時点の内容）' };
+var HISTORY_LABELS = { approve: '承認で更新（更新前の内容）', edit: '役員が編集（編集前の内容）', rollback: '以前の版に戻した（戻す前の内容）', 'delete': 'ゴミ箱へ移動（その時点の内容）' };
 
 function apiErr(err) { toast(err.message, 'err'); }
 
@@ -191,6 +191,8 @@ SCREENS['a-ledger'] = {
             }, function (err) { closeDialog(); apiErr(err); });
           }));
       } }, ico('trash', 17), h('span', { class: 'bt-lbl' }, 'ゴミ箱へ移動')),
+      h('button', { type: 'button', class: 'btn sec sm ico', 'aria-label': '編集', onClick: function () { startEdit(d.member, d.family); } },
+        ico('edit', 17), h('span', { class: 'bt-lbl' }, '編集')),
       h('button', { type: 'button', class: 'btn pri sm ico', 'aria-label': '印刷', onClick: function () { window.print(); } },
         ico('print', 17), h('span', { class: 'bt-lbl' }, '印刷（A4）')));
   },
@@ -250,13 +252,17 @@ function loadReqs(countOnly) {
 
 function selectReq(id) {
   var R = A.req;
-  R.selId = id; R.detail = null; R.rejecting = false; R.reason = ''; R.showSheet = false; R.lv = { view: 'list', zoom: false };
+  R.selId = id; R.detail = null; R.detailErr = ''; R.rejecting = false; R.reason = ''; R.showSheet = false; R.lv = { view: 'list', zoom: false };
   render();
   withBusy(null, Api.call('getRequest', { request_id: id })).then(function (d) {
     if (R.selId !== id) return;
     R.detail = d;
     render();
-  }, apiErr);
+  }, function (err) {
+    if (R.selId !== id) return;
+    R.detailErr = err.message;
+    render();
+  });
 }
 
 function famSummary(list) {
@@ -271,6 +277,11 @@ function diffValue(k, v) {
 
 function requestDetail() {
   var R = A.req, d = R.detail, it = (R.items || []).filter(function (x) { return x.request_id === R.selId; })[0];
+  if (!d && R.detailErr) {
+    return h('div', { class: 'panel', style: 'padding:20px;display:flex;flex-direction:column;gap:12px;align-items:flex-start' },
+      note('red', 'alert', ['申請の内容を読み込めませんでした。', h('br'), R.detailErr]),
+      h('button', { type: 'button', class: 'btn sec sm', onClick: function () { selectReq(R.selId); } }, ico('restore', 16), '再読み込み'));
+  }
   if (!d) return h('div', { class: 'panel' }, loading());
   var q = d.request, after = d.after.member, isNew = q.type === 'create';
   var head = h('div', { style: 'padding:18px 20px;display:flex;flex-direction:column;gap:8px' },
