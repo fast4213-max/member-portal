@@ -47,6 +47,11 @@ function c_(cls, style) {
 }
 function v_(text, style) { return h('span', { class: 'lv', style: style || '' }, text || ''); }
 function mk_(label, on) { return h('span', { class: 'mk' + (on ? ' on' : '') }, label); }
+function stLine_(label, line, st) {
+  return h('div', { style: 'display:flex;align-items:baseline;gap:6px;line-height:1.35' },
+    h('span', { style: 'flex-shrink:0' }, label),
+    h('span', { style: 'flex:1 1 0;min-width:0;word-break:break-all' }, v_(line), ' 線　', v_(st), ' 駅'));
+}
 
 /**
  * 紙と同じ見た目の台帳（794×1123 の要素）
@@ -59,12 +64,12 @@ function buildSheet(opts) {
   var madeY = made ? made[1] : '', madeM = made ? String(+made[2]) : '', madeD = made ? String(+made[3]) : '';
 
   var top = h('div', { class: 'g', style: 'grid-template-columns:66px minmax(0,1fr) 42px 50px 126px 84px 128px' },
-    c_('lab', 'height:26px', 'フリガナ'),
+    c_('lab', 'min-height:26px', 'フリガナ'),
     c_('lv ' + H('kana'), 'font-size:12px;letter-spacing:.08em', kn_(r)),
     c_('lab', '', '性別'), c_('lab', '', '年齢'), c_('lab', '', '生年月日'), c_('lab', '', '職名'),
     c_('lab', 'font-size:10px;letter-spacing:0', '契約社員入社年月日'),
 
-    c_('lab', 'height:52px', '氏　名'),
+    c_('lab', 'min-height:52px', '氏　名'),
     c_('lv ' + H('name'), 'font-size:22px;font-weight:700;letter-spacing:.08em', nm_(r)),
     c_('lv ' + H('gender'), 'justify-content:center', r.gender || ''),
     c_('lv ' + H('birth'), 'justify-content:center', ageOf(r.birth_date)),
@@ -72,36 +77,36 @@ function buildSheet(opts) {
     c_('lv ' + H('job'), 'justify-content:center;text-align:center', r.job_title || ''),
     c_('lv ' + H('contract'), 'justify-content:center', fmtDate(r.contract_join_date)),
 
-    c_('lab', 'height:36px', '電話番号'),
+    c_('lab', 'min-height:36px', '電話番号'),
     c_(H('tel'), 'grid-column:2/7;gap:10px',
        h('span', { style: 'font-size:11px' }, '自宅'), v_(r.tel_home, 'width:170px'),
        h('span', { style: 'font-size:11px' }, '携帯'), v_(r.tel_mobile)),
     c_('lab', 'font-size:10px;letter-spacing:0', '正社員入社年月日'),
 
-    c_('lab', 'height:56px', '現住所'),
+    c_('lab', 'min-height:56px', '現住所'),
     c_(H('addr'), 'grid-column:2/7;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px',
        h('span', { style: 'font-size:11px' }, '〒 ', v_(r.zip)), v_(r.address, 'font-size:13px')),
     c_('lv ' + H('regular'), 'justify-content:center', fmtDate(r.regular_join_date)),
 
-    c_('lab', 'height:56px', '実家住所'),
+    c_('lab', 'min-height:56px', '実家住所'),
     c_(H('faddr'), 'grid-column:2/6;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px',
        h('span', { style: 'font-size:11px' }, '〒 ', v_(r.family_zip)), v_(r.family_address, 'font-size:13px')),
     c_(H('ftel'), 'grid-column:6/8;gap:8px', h('span', { style: 'font-size:11px' }, '電話'), v_(r.family_tel)),
 
-    c_('lab', 'height:44px;font-size:10px;letter-spacing:0', '社員コード'),
+    c_('lab', 'min-height:44px;font-size:10px;letter-spacing:0', '社員コード'),
     c_('lv ' + H('code'), 'font-size:14px;letter-spacing:.14em', r.employee_code || ''),
     c_('lab', 'grid-column:3/5', '最寄駅'),
-    c_(H('st'), 'grid-column:5/8;gap:6px;font-size:11.5px;flex-wrap:wrap',
-       h('span', null, '自宅'), v_(r.station_home_line), h('span', null, '線'), v_(r.station_home), h('span', null, '駅'),
-       h('span', { style: 'margin-left:10px' }, '実家'), v_(r.station_family_line), h('span', null, '線'), v_(r.station_family), h('span', null, '駅'))
+    c_(H('st'), 'grid-column:5/8;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;font-size:11.5px',
+       stLine_('自宅', r.station_home_line, r.station_home),
+       stLine_('実家', r.station_family_line, r.station_family))
   );
 
   var famGrid = h('div', { class: 'g', style: 'grid-template-columns:minmax(0,1fr) 84px 32px 38px 34px minmax(0,1fr) 84px 32px 38px 34px' },
-    c_('lab', 'grid-column:1/11;height:28px;font-size:12.5px;letter-spacing:.6em', 'ご家族構成'));
+    c_('lab', 'grid-column:1/11;min-height:28px;font-size:12.5px;letter-spacing:.6em', 'ご家族構成'));
   // 見出し：高さをそろえ、狭い列（性別・続柄・同別）は1行に収める
   for (var k = 0; k < 2; k++) {
     ['氏　名', '生年月日', '性別', '続柄', '同別'].forEach(function (t, i) {
-      famGrid.appendChild(c_('lab', 'height:26px;padding:0 2px;letter-spacing:0;white-space:nowrap' + (i >= 2 ? ';font-size:10px' : ''), t));
+      famGrid.appendChild(c_('lab', 'min-height:26px;padding:0 2px;letter-spacing:0;white-space:nowrap' + (i >= 2 ? ';font-size:10px' : ''), t));
     });
   }
   // 紙と同じく左列に1〜5人目、右列に6〜10人目
@@ -122,14 +127,14 @@ function buildSheet(opts) {
   var kyosai = h('div', { class: 'g', style: 'grid-template-columns:110px minmax(0,1fr) 150px minmax(0,1fr)' },
     KYOSAI_ITEMS.map(function (it) {
       var v = r[it[0]];
-      return [c_('lab', 'height:40px', it[1]),
+      return [c_('lab', 'min-height:40px', it[1]),
               c_(H(it[0]), 'justify-content:center;gap:2px;font-size:12px',
                  mk_('加入済', v === '加入済'), '・', mk_('未加入', v === '未加入'), '・', mk_('不明', v === '不明'))];
     }));
 
   var bottom = h('div', { class: 'g', style: 'grid-template-columns:110px minmax(0,1fr)' },
-    c_('lab', 'height:44px', '前職場'), c_('lv ' + H('prev'), '', r.prev_workplace || ''),
-    c_('lab', 'height:56px', '組合役員経験'),
+    c_('lab', 'min-height:44px', '前職場'), c_('lv ' + H('prev'), '', r.prev_workplace || ''),
+    c_('lab', 'min-height:56px', '組合役員経験'),
     c_(H('off'), 'gap:4px;font-size:12px;flex-wrap:wrap',
        mk_('無', r.officer_exp === '無'), '・', mk_('有', r.officer_exp === '有'),
        h('span', { style: 'margin:0 4px' }, '→'),
