@@ -76,6 +76,8 @@
 .date .in{text-align:center;padding:0 4px}
 .date .y{width:80px;flex-shrink:0}.date .md{width:54px;flex-shrink:0}
 .date span{font-size:14px;color:#5A6475}
+.sfx{display:flex;align-items:center;gap:6px;min-width:0}
+.sfx span{flex-shrink:0;font-size:14px;color:#5A6475}
 .seg{display:flex;gap:6px}
 .sg{flex:1 1 0;min-width:0;height:44px;border:1px solid #D5DAE1;border-radius:10px;background:#fff;font-family:inherit;font-size:14px;font-weight:600;color:#2A3547;cursor:pointer}
 .sg:hover{border-color:#8C9BD0}

@@ -100,6 +100,11 @@ function seg(obj, key, choices, after) {
   }));
 }
 
+/** 入力欄の後ろに「線」「駅」などを添える */
+function sfx(input, text) {
+  return h('div', { class: 'sfx' }, input, h('span', null, text));
+}
+
 function fld(label, req, kids) {
   return h('div', { class: 'fld' },
     h('span', { class: 'lb' }, label, req === true ? h('em', { class: 'req' }, '必須') : req ? h('em', { class: 'opt' }, req) : null),
@@ -307,12 +312,13 @@ function formSections() {
     ], '任意'),
     section('5', '最寄駅', [
       fld('自宅', true, h('div', { class: 'row2' },
-        inp('station_home_line', { err: 'station', ph: '〇〇線', label: '自宅最寄駅の路線', max: 30 }),
-        inp('station_home', { err: 'station', ph: '〇〇駅', label: '自宅最寄駅', max: 30 }))),
+        sfx(inp('station_home_line', { err: 'station', ph: '〇〇', label: '自宅最寄駅の路線', max: 30 }), '線'),
+        sfx(inp('station_home', { err: 'station', ph: '〇〇', label: '自宅最寄駅', max: 30 }), '駅'))),
       errP('station'),
       fld('実家', '任意', h('div', { class: 'row2' },
-        inp('station_family_line', { ph: '〇〇線', label: '実家最寄駅の路線', max: 30 }),
-        inp('station_family', { ph: '〇〇駅', label: '実家最寄駅', max: 30 })))
+        sfx(inp('station_family_line', { ph: '〇〇', label: '実家最寄駅の路線', max: 30 }), '線'),
+        sfx(inp('station_family', { ph: '〇〇', label: '実家最寄駅', max: 30 }), '駅'))),
+      h('span', { style: 'font-size:12px;color:#5A6475' }, '「線」「駅」は入れなくてOK')
     ]),
     h('section', { class: 'sec' },
       h('h3', { class: 'st' }, h('span', { class: 'num' }, '6'), 'ご家族構成',

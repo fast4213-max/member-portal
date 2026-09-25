@@ -50,7 +50,8 @@ function mk_(label, on) { return h('span', { class: 'mk' + (on ? ' on' : '') }, 
 function stLine_(label, line, st) {
   return h('div', { style: 'display:flex;align-items:baseline;gap:6px;line-height:1.35' },
     h('span', { style: 'flex-shrink:0' }, label),
-    h('span', { style: 'flex:1 1 0;min-width:0;word-break:break-all' }, v_(line), ' 線　', v_(st), ' 駅'));
+    h('span', { style: 'flex:1 1 0;min-width:0;word-break:break-all' },
+      v_(stationName('_line', line)), ' 線　', v_(stationName('', st)), ' 駅'));
 }
 
 /**
@@ -101,7 +102,7 @@ function buildSheet(opts) {
        stLine_('実家', r.station_family_line, r.station_family))
   );
 
-  var famGrid = h('div', { class: 'g', style: 'grid-template-columns:minmax(0,1fr) 84px 32px 38px 34px minmax(0,1fr) 84px 32px 38px 34px' },
+  var famGrid = h('div', { class: 'g', style: 'grid-template-columns:minmax(0,1fr) 92px 32px 40px 34px minmax(0,1fr) 92px 32px 40px 34px' },
     c_('lab', 'grid-column:1/11;min-height:28px;font-size:12.5px;letter-spacing:.6em', 'ご家族構成'));
   // 見出し：高さをそろえ、狭い列（性別・続柄・同別）は1行に収める
   for (var k = 0; k < 2; k++) {
@@ -117,9 +118,10 @@ function buildSheet(opts) {
       famGrid.appendChild(c_(cls + ' fam-name', 'height:50px;padding:0;flex-direction:column;align-items:stretch',
         h('div', { class: 'fam-kana' }, v_(kn_(m), 'font-size:10px')),
         h('div', { class: 'fam-nm' }, v_(nm_(m), 'font-size:13.5px'))));
-      famGrid.appendChild(c_('lv ' + cls, 'justify-content:center;font-size:10.5px;text-align:center', fmtDate(m.birth_date)));
+      // 生年月日・続柄（義父など）は2段にならないよう1行で
+      famGrid.appendChild(c_('lv ' + cls, 'justify-content:center;padding:0 2px;font-size:10.5px;white-space:nowrap', fmtDate(m.birth_date)));
       famGrid.appendChild(c_('lv ' + cls, 'justify-content:center', m.gender || ''));
-      famGrid.appendChild(c_('lv ' + cls, 'justify-content:center', m.relationship || ''));
+      famGrid.appendChild(c_('lv ' + cls, 'justify-content:center;padding:0 2px;white-space:nowrap' + ((m.relationship || '').length > 2 ? ';font-size:10.5px' : ''), m.relationship || ''));
       famGrid.appendChild(c_('lv ' + cls, 'justify-content:center', (m.living_together || '').charAt(0)));
     });
   }
@@ -179,6 +181,10 @@ function buildReadable(opts) {
     return h('section', { class: 'sec rd-sec' }, h('h3', { class: 'st rd-t' }, title), rows);
   };
   var join = function () { return Array.prototype.filter.call(arguments, Boolean).join(' '); };
+  var stRow = function (line, st) {
+    line = stationName('_line', line); st = stationName('', st);
+    return st ? join(line && line + '線', st + '駅') : '';
+  };
 
   var famRows = fam.length ? fam.map(function (m, i) {
     return h('div', { class: 'rd-row' + (famHl_(fam, opts.baseFam, i) ? ' hl' : '') },
@@ -207,8 +213,8 @@ function buildReadable(opts) {
       row('実家住所', r.family_zip ? '〒' + r.family_zip + '\n' + (r.family_address || '') : r.family_address, 'faddr'),
       row('実家電話', r.family_tel, 'ftel')]),
     sec('最寄駅', [
-      row('自宅', r.station_home ? join(r.station_home_line && r.station_home_line + '線', r.station_home + '駅') : '', 'st'),
-      row('実家', r.station_family ? join(r.station_family_line && r.station_family_line + '線', r.station_family + '駅') : '', 'st')]),
+      row('自宅', stRow(r.station_home_line, r.station_home), 'st'),
+      row('実家', stRow(r.station_family_line, r.station_family), 'st')]),
     sec('ご家族構成（' + fam.length + '人）', famRows),
     sec('共済加入状況', KYOSAI_ITEMS.map(function (it) { return row(it[1], r[it[0]], it[0]); })),
     sec('前職場・組合役員経験', [

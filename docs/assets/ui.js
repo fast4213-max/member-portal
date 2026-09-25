@@ -96,7 +96,14 @@ function cleanValue(name, v) {
     return t;
   }
   if (/_kana$/.test(name)) return toKana(v);
+  if (/^station_\w+$/.test(name)) return stationName(name, v);
   return String(v == null ? '' : v);
+}
+
+/** 最寄駅：「線」「駅」は画面・台帳で後ろに付けるので、入力に付いていたら外す */
+function stationName(name, v) {
+  var s = String(v == null ? '' : v).replace(/^[\s\u3000]+|[\s\u3000]+$/g, '');
+  return s.replace(/_line$/.test(name) ? /[\s\u3000]*線$/ : /[\s\u3000]*駅$/, '');
 }
 
 /** 年月日 → true(正しい) / false(間違い) / null(空) */
