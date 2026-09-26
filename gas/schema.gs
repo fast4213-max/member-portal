@@ -124,6 +124,17 @@ function cleanText_(s) {
 }
 
 /**
+ * 最寄駅の項目だけ、後ろの「線」「駅」を外す（画面・台帳で後ろに付けるため）。それ以外はそのまま。
+ * 前に「〇〇線」のまま登録された台帳と比べるときにも使う。
+ */
+function stationName_(id, v) {
+  var s = String(v == null ? '' : v);
+  if (!/^station_/.test(id)) return s;
+  s = s.replace(/^[\s\u3000]+|[\s\u3000]+$/g, '');
+  return s.replace(/_line$/.test(id) ? /[\s\u3000]*線$/ : /[\s\u3000]*駅$/, '');
+}
+
+/**
  * 日付を 'YYYY-MM-DD' に揃える。月日は 1 でも 01 でも可。
  * 空なら ''、正しくなければ null を返す。
  */
@@ -145,6 +156,7 @@ function normField_(f, raw) {
   switch (f.kind) {
     case 'text':
       v = s.replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+      v = stationName_(f.id, v);
       if (v.length > f.max) return { v: v, err: f.max + '文字以内で入力してください' };
       break;
     case 'kana':
@@ -231,7 +243,8 @@ function normIdentity_(code, birth) {
 /** 変更のあった本人項目のID一覧 */
 function changedFields_(before, after) {
   return MEMBER_FIELDS.filter(function (f) {
-    return String(before[f.id] || '') !== String(after[f.id] || '');
+    // 「〇〇線」→「〇〇」のように線・駅が外れただけの最寄駅は変更に数えない
+    return stationName_(f.id, before[f.id] || '') !== stationName_(f.id, after[f.id] || '');
   }).map(function (f) { return f.id; });
 }
 

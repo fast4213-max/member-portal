@@ -284,7 +284,7 @@ function famSummary(list) {
 }
 
 function diffValue(k, v) {
-  return /_date$/.test(k) ? fmtDate(v) : v;
+  return /_date$/.test(k) ? fmtDate(v) : cleanStation(k, String(v == null ? '' : v));
 }
 
 function requestDetail() {

@@ -133,6 +133,7 @@ function runSelfTest_() {
     var r = identify_(sm, { employee_code: TEST_CODE, birth_date: '1990年4月12日' });
     ok(r.member.job_title === '事務（2回目）', '職名 ' + r.member.job_title);
     ok(r.family.length === 2, '家族 ' + r.family.length + '人');
+    ok(r.member.station_home_line === '〇〇', '最寄駅の線 ' + r.member.station_home_line + '（「線」が外れていない）');
   });
 
   step('役員：一覧（や行・社員番号で検索）は最小限の項目だけ', function () {
