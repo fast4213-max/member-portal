@@ -542,6 +542,7 @@ function submitRequest(e) {
   withBusy(e.currentTarget, Api.call(action, params)).then(function (d) {
     if (M.mode === 'edit') {
       toast('保存しました。台帳に反映されています');
+      A.listCache = {};
       openLedger(M.base.member_id);
       resetMember();
       return;

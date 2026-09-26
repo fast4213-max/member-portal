@@ -12,7 +12,9 @@ function resetAdmin() {
     ledger: { id: null, data: null, history: [], lv: { view: 'list', zoom: false } },
     req: { items: null, selId: null, detail: null, rejecting: false, reason: '', showSheet: false, lv: { view: 'list', zoom: false } },
     log: { cat: 'all', period: '7', page: 1, data: null },
-    trash: { items: null, purgeDays: 90 }
+    trash: { items: null, purgeDays: 90 },
+    // 速度対策：一度読んだ一覧と申請の中身を覚えておき、次に開いたときはすぐ出す
+    listCache: {}, detailCache: {}
   };
 }
 resetAdmin();
@@ -76,9 +78,13 @@ function pager(data, onPage) {
 
 var searchTimer = null;
 
+/** 台帳一覧を読む。前に同じ条件で読んだ結果があれば先に出しておき、裏で最新に差し替える */
 function loadList() {
-  var L = A.list;
+  var L = A.list, key = [L.row, L.q, L.page].join('|');
+  if (A.listCache[key]) { L.data = A.listCache[key]; render(); }
   withBusy(null, Api.call('listMembers', { row: L.row, q: L.q, page: L.page })).then(function (d) {
+    A.listCache[key] = d;
+    if (key !== [L.row, L.q, L.page].join('|')) return;   // 待っている間に別の条件に切り替えた
     L.data = d;
     if (!L.row && !L.q) A.totalAll = d.total;
     render();
@@ -185,6 +191,7 @@ SCREENS['a-ledger'] = {
           'ゴミ箱へ移動', 'dngf', function (e) {
             withBusy(e.currentTarget, Api.call('deleteMember', { member_id: d.member.member_id })).then(function () {
               S.dialog = null;
+              A.listCache = {};
               A.trashCount++;
               toast('ゴミ箱に移動しました');
               openAdmin('a-list');
@@ -241,6 +248,10 @@ function loadReqs(countOnly) {
   var R = A.req;
   withBusy(null, Api.call('listRequests')).then(function (d) {
     R.items = d.items;
+    // 承認待ちでなくなった申請の中身は捨てる
+    var cache = {};
+    d.items.forEach(function (x) { if (A.detailCache[x.request_id]) cache[x.request_id] = A.detailCache[x.request_id]; });
+    A.detailCache = cache;
     A.pendingCount = d.items.length;
     if (!countOnly && R.selId && !d.items.some(function (x) { return x.request_id === R.selId; })) {
       R.selId = null; R.detail = null;
@@ -256,6 +267,8 @@ function loadReqs(countOnly) {
 function nextReq(doneId) {
   var R = A.req;
   R.items = (R.items || []).filter(function (x) { return x.request_id !== doneId; });
+  delete A.detailCache[doneId];
+  A.listCache = {};   // 承認で台帳が変わった
   A.pendingCount = R.items.length;
   R.selId = null; R.detail = null;
   if (isWide() && R.items.length) selectReq(R.items[0].request_id);
@@ -265,8 +278,17 @@ function nextReq(doneId) {
 function selectReq(id) {
   var R = A.req;
   R.selId = id; R.detail = null; R.detailErr = ''; R.rejecting = false; R.reason = ''; R.showSheet = false; R.lv = { view: 'list', zoom: false };
+  var c = A.detailCache[id];
+  if (c && c.data && Date.now() - c.at < DETAIL_CACHE_MS) {
+    // 先に読んでおいた中身をすぐ出す（承認のときにサーバーで最新の台帳と照らし合わせるので、少し古くても安全）
+    R.detail = c.data;
+    render();
+    prefetchNextReq(id);
+    return;
+  }
   render();
-  withBusy(null, Api.call('getRequest', { request_id: id })).then(function (d) {
+  withBusy(null, fetchDetail(id)).then(function (d) {
+    prefetchNextReq(id);
     if (R.selId !== id) return;
     R.detail = d;
     render();
@@ -275,6 +297,30 @@ function selectReq(id) {
     R.detailErr = err.message;
     render();
   });
+}
+
+var DETAIL_CACHE_MS = 3 * 60000;   // 先に読んでおいた申請の中身を使う時間
+
+/** 申請の中身を読む（読み込み中・読んだばかりなら、それを使う） */
+function fetchDetail(id) {
+  var c = A.detailCache[id];
+  if (c && (!c.data || Date.now() - c.at < DETAIL_CACHE_MS)) return c.promise;
+  var e = A.detailCache[id] = { data: null, at: 0 };
+  e.promise = Api.call('getRequest', { request_id: id }).then(function (d) {
+    e.data = d; e.at = Date.now();
+    return d;
+  }, function (err) {
+    if (A.detailCache[id] === e) delete A.detailCache[id];
+    throw err;
+  });
+  return e.promise;
+}
+
+/** いま開いた申請の次の申請を、裏で読んでおく（承認・却下のあとすぐ次を出せるように） */
+function prefetchNextReq(id) {
+  var items = A.req.items || [], i = -1;
+  items.forEach(function (x, j) { if (x.request_id === id) i = j; });
+  if (i >= 0 && items[i + 1]) fetchDetail(items[i + 1].request_id).catch(function () { /* 開いたときに読み直す */ });
 }
 
 function famSummary(list) {
@@ -342,7 +388,7 @@ function requestDetail() {
     }, function (err) {
       apiErr(err);
       if (err.code === 'superseded' || err.code === 'not_pending') { R.selId = null; R.detail = null; loadReqs(); }
-      else if (err.code === 'stale') selectReq(q.request_id);
+      else if (err.code === 'stale') { delete A.detailCache[q.request_id]; selectReq(q.request_id); }
     });
   };
   var reject = function (e) {
@@ -528,6 +574,7 @@ SCREENS['a-trash'] = {
             h('div', { style: 'display:flex;gap:8px;margin-left:auto' },
               h('button', { type: 'button', class: 'btn sec sm', onClick: function (e) {
                 withBusy(e.currentTarget, Api.call('restoreMember', { member_id: t.member_id })).then(function () {
+                  A.listCache = {};
                   toast('復元しました。台帳一覧に戻っています');
                   loadTrash();
                 }, apiErr);
