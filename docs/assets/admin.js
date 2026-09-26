@@ -313,7 +313,10 @@ function requestDetail() {
     body = h('div', { style: 'padding:0 20px 16px' },
       ledgerView({ rec: after, fam: d.after.family, base: isNew ? null : d.before.member, baseFam: isNew ? null : d.before.family, madeAt: q.requested_at }, R.lv, render));
   } else {
-    var rows = d.changedFields.map(function (k) {
+    // 「〇〇線」→「〇〇」のように線・駅を外しただけの最寄駅は差分に出さない
+    var rows = d.changedFields.filter(function (k) {
+      return cleanStation(k, String((d.before.member || {})[k] || '')) !== cleanStation(k, String(after[k] || ''));
+    }).map(function (k) {
       return h('div', { class: 'dr' },
         h('div', { style: 'font-weight:600;color:#2A3547;font-size:13px' }, FIELD_LABELS[k] || k),
         h('div', { class: 'bf', style: 'color:#8A93A3;word-break:break-all' }, diffValue(k, d.before.member[k]) || '（空欄）'),

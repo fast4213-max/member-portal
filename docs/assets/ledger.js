@@ -24,7 +24,9 @@ var KYOSAI_ITEMS = [['kyosai_sogo', '総合共済'], ['kyosai_kyuen', '救援共
 function highlights_(rec, base) {
   var hl = {};
   Object.keys(HL_GROUPS).forEach(function (g) {
-    hl[g] = !!base && HL_GROUPS[g].some(function (k) { return String(rec[k] || '') !== String(base[k] || ''); });
+    hl[g] = !!base && HL_GROUPS[g].some(function (k) {
+      return cleanStation(k, String(rec[k] || '')) !== cleanStation(k, String(base[k] || ''));
+    });
   });
   return hl;
 }

@@ -100,6 +100,9 @@ function cleanValue(name, v) {
   return String(v == null ? '' : v);
 }
 
+/** 最寄駅の項目だけ「線」「駅」を外す（それ以外はそのまま） */
+function cleanStation(k, v) { return /^station_\w+$/.test(k) ? stationName(k, v) : v; }
+
 /** 最寄駅：「線」「駅」は画面・台帳で後ろに付けるので、入力に付いていたら外す */
 function stationName(name, v) {
   var s = String(v == null ? '' : v).replace(/^[\s\u3000]+|[\s\u3000]+$/g, '');
@@ -189,7 +192,7 @@ function familyToRecord(list) {
 /** サーバーの member → フォーム */
 function recordToForm(rec) {
   var f = clone(EMPTY_FORM);
-  Object.keys(f).forEach(function (k) { if (rec[k] != null) f[k] = String(rec[k]); });
+  Object.keys(f).forEach(function (k) { if (rec[k] != null) f[k] = cleanStation(k, String(rec[k])); });
   DATE_PARTS.forEach(function (p) {
     var d = splitDate(rec[p[1]]);
     f[p[0] + '_y'] = d.y; f[p[0] + '_m'] = d.m; f[p[0] + '_d'] = d.d;

@@ -502,7 +502,8 @@ function editScreen() { return M.mode === 'update' ? 'update' : M.mode === 'edit
 function noChanges() {
   if (M.mode === 'new') return false;
   var a = currentRecord(), b = M.base;
-  var same = Object.keys(a).every(function (k) { return String(a[k] || '') !== String(b[k] || '') ? false : true; });
+  // 前に「〇〇線」で登録された最寄駅は、線を外しただけなら変更に数えない
+  var same = Object.keys(a).every(function (k) { return String(a[k] || '') === cleanStation(k, String(b[k] || '')); });
   return same && JSON.stringify(familyToRecord(M.fam).map(famKey_)) === JSON.stringify((M.baseFam || []).map(famKey_));
 }
 
