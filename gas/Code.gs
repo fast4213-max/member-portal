@@ -164,3 +164,6 @@ function newId_(prefix) {
 function str_(v, max) {
   return String(v == null ? '' : v).slice(0, max || 200);
 }
+
+/** 5分おきの時間トリガー用。何もしない（GAS の起動を保って、ログインの最初の1回が遅くならないようにする） */
+function keepWarm() {}
