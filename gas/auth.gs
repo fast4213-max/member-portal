@@ -64,19 +64,44 @@ function checkPasswordLocked_(role, password) {
   fail_('bad_password', 'パスワードが違います');
 }
 
+/** パスワードが合っているかだけを見る（排他・スプレッドシートに触れない。ロック中は常に false） */
+function passwordMatches_(role, password) {
+  if (CacheService.getScriptCache().get('lock:' + role)) return false;
+  var stored = prop_(passHashKey_(role));
+  if (!stored) return false;
+  var pw = String(password == null ? '' : password);
+  return pw.length > 0 && pw.length <= 200 && safeEqual_(hashPassword_(pw), stored);
+}
+
 /** action: login  { role: 'member' | 'officer', password } */
 function login_(_, p) {
   var role = (p.role === 'officer' || p.role === 'admin') ? 'officer' : 'member';
+  // 合っていれば排他もスプレッドシートも使わずにすぐ返す（ここが詰まるとログインが固まるため）。
+  // 間違い・ロック中だけ、回数を数えるために排他の中で照合する（ここで fail_ が投げられる）
+  if (passwordMatches_(role, p.password)) {
+    CacheService.getScriptCache().remove('fail:' + role);
+  } else {
+    withLock_(function () { checkPasswordLocked_(role, p.password); });
+  }
   var token = sha256Hex_(Utilities.getUuid() + Utilities.getUuid() + Date.now());
-  var session = { role: role, actor: ROLE_NAMES[role], epoch: prop_('TOKEN_EPOCH') || '0' };
-  // 照合とログ記録を1回の排他にまとめる（排他を2回取りに行くと待ちが2倍になるため）
-  withLock_(function () {
-    checkPasswordLocked_(role, p.password);
-    CacheService.getScriptCache().put('tok:' + token, JSON.stringify(session), SESSION_HOURS * 3600);
-    logAudit_(role, session.actor, 'login_ok', '', '');
-  });
+  // login_ok の記録は、この人の最初の操作のときに書く（doPost 側。ログイン自体を待たせないため）
+  var session = { role: role, actor: ROLE_NAMES[role], epoch: prop_('TOKEN_EPOCH') || '0',
+                  until: Date.now() + SESSION_HOURS * 3600 * 1000, pendingLogin: true };
+  CacheService.getScriptCache().put('tok:' + token, JSON.stringify(session), SESSION_HOURS * 3600);
   // 組織名はログインした人にだけ返す（ログイン前の画面には出さない）
   return { token: token, role: role, expiresIn: SESSION_HOURS * 3600, org: org_() };
+}
+
+/** ログインの記録をまだ書いていなければ書く（最初の認証つき操作のとき） */
+function flushLoginLog_(session) {
+  if (!session.pendingLogin) return;
+  var cache = CacheService.getScriptCache();
+  var left = Math.floor(((session.until || 0) - Date.now()) / 1000);
+  if (left < 1) return;
+  session.pendingLogin = false;
+  cache.put('tok:' + session.token, JSON.stringify({ role: session.role, actor: session.actor,
+            epoch: session.epoch, until: session.until }), Math.min(left, SESSION_HOURS * 3600));
+  try { logAudit_(session.role, session.actor, 'login_ok', '', ''); } catch (e) { console.error('login_ok log: ' + e); }
 }
 
 /** トークンからセッションを取り出す。無効なら null */

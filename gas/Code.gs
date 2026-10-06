@@ -7,7 +7,7 @@
  * 認証・権限チェック・入力検証はすべてこのGAS側で行う。
  */
 
-var APP_VERSION = '0.3.3';
+var APP_VERSION = '0.3.4';
 
 // action → 必要な権限（null=ログイン不要, 'any'=ログインしていれば誰でも）と処理
 var ROUTES = {
@@ -65,6 +65,7 @@ function doPost(e) {
         return json_({ ok: false, error: 'forbidden', message: 'この操作は許可されていません' });
       }
     }
+    if (session) flushLoginLog_(session);
     var data = route.fn(session, p);
     return json_({ ok: true, data: data === undefined ? null : data });
   } catch (err) {

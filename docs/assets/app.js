@@ -215,6 +215,11 @@ function start() {
   Api.load();
   // GAS はしばらく使われないと起動に数秒かかるので、ページを開いた時点で起こしておく（結果は使わない）
   Api.call('ping').catch(function () { /* 失敗しても問題なし */ });
+  // GAS は数分使われないと眠るので、開いている間は4分おきに起こしておく
+  setInterval(function () { if (!document.hidden) Api.call('ping').catch(function () { /* 無視 */ }); }, 240000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) Api.call('ping').catch(function () { /* 無視 */ });
+  });
   watchIdle_();
   Api.onAuthLost = function (msg) {
     resetMember();

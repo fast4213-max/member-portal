@@ -8,6 +8,11 @@
 
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbx6gf6dE7ayikTDhv0YjtbFQttTdQATmNY6iR2MgDwefQoju31LbPi28r_QizNoEdZu/exec';
 var API_TIMEOUT_MS = 25000;   // これ以上返事がなければ打ち切る
+var HEDGE_MS = 6000;          // 読むだけの操作は、これだけ待っても返事がなければ同じものをもう1本送る
+var SAFE_ACTIONS = {          // 2本送っても害のない操作（読むだけ・ログイン）
+  ping: 1, login: 1, myRequests: 1,   // 本人確認（identify・checkDuplicate）は失敗回数を数えるので除く
+  listMembers: 1, getMember: 1, listRequests: 1, getRequest: 1, listTrash: 1, listHistory: 1, listLogs: 1
+};
 
 var TOKEN_KEY = 'mp_token';
 var ROLE_KEY = 'mp_role';
@@ -50,11 +55,8 @@ var Api = {
     } catch (e) { /* 無視 */ }
   },
 
-  /** action を呼んで data を返す。失敗は ApiError を投げる */
-  call: function (action, params) {
-    var body = Object.assign({}, params || {}, { action: action });
-    if (this.token) body.token = this.token;
-    var self = this;
+  /** 1回の送信。返事（JSON）を返す。25秒で打ち切る */
+  send_: function (body) {
     // サーバーが返さないとき、画面が固まったままにならないよう一定時間で打ち切る
     var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
     var timedOut = false;
@@ -77,7 +79,41 @@ var Api = {
     }, function (e) {
       clearTimeout(timer);
       throw e;
-    }).then(function (json) {
+    });
+  },
+
+  /**
+   * 読むだけの操作（と、やり直しても害のないログイン）は、返事が HEDGE_MS 秒来なければ
+   * 同じ内容をもう1本送り、先に返ってきた方を使う。GAS は起動が遅い・たまに詰まるので、
+   * 待たされる時間を短くできる。通信エラーも1回だけ自動で送り直す。
+   * 書き込み（申請・承認・削除など）は二重に実行されると困るので、この処理は使わない。
+   */
+  sendSafe_: function (body) {
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      var pending = 0, sent = 0, done = false, lastErr = null, hedge = null;
+      function finish(fn, v) { if (done) return; done = true; clearTimeout(hedge); fn(v); }
+      function fire() {
+        pending++; sent++;
+        self.send_(body).then(function (json) { finish(resolve, json); }, function (e) {
+          lastErr = e;
+          pending--;
+          if (done) return;
+          if (sent < 2) fire();                    // 失敗したら待たずに1回だけ送り直す
+          else if (pending === 0) finish(reject, lastErr);
+        });
+      }
+      fire();
+      hedge = setTimeout(function () { if (!done && sent < 2) fire(); }, HEDGE_MS);
+    });
+  },
+
+  /** action を呼んで data を返す。失敗は ApiError を投げる */
+  call: function (action, params) {
+    var body = Object.assign({}, params || {}, { action: action });
+    if (this.token) body.token = this.token;
+    var self = this;
+    return (SAFE_ACTIONS[action] ? this.sendSafe_(body) : this.send_(body)).then(function (json) {
       if (json && json.ok) return json.data;
       var err = new ApiError((json && json.error) || 'internal',
                              (json && json.message) || 'サーバーでエラーが起きました', json && json.extra);
