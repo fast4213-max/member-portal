@@ -7,6 +7,7 @@
 'use strict';
 
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbx6gf6dE7ayikTDhv0YjtbFQttTdQATmNY6iR2MgDwefQoju31LbPi28r_QizNoEdZu/exec';
+var API_TIMEOUT_MS = 25000;   // これ以上返事がなければ打ち切る
 
 var TOKEN_KEY = 'mp_token';
 var ROLE_KEY = 'mp_role';
@@ -54,16 +55,28 @@ var Api = {
     var body = Object.assign({}, params || {}, { action: action });
     if (this.token) body.token = this.token;
     var self = this;
+    // サーバーが返さないとき、画面が固まったままにならないよう一定時間で打ち切る
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timedOut = false;
+    var timer = ctrl ? setTimeout(function () { timedOut = true; ctrl.abort(); }, API_TIMEOUT_MS) : null;
     return fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain にして CORS の事前確認を避ける
       body: JSON.stringify(body),
       redirect: 'follow',
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: ctrl ? ctrl.signal : undefined
     }).then(function (res) {
       return res.json();
     }, function () {
+      if (timedOut) throw new ApiError('timeout', '応答に時間がかかっています。少し待ってから、もう一度お試しください');
       throw new ApiError('network', '通信できませんでした。電波の良いところで、もう一度お試しください');
+    }).then(function (v) {
+      clearTimeout(timer);
+      return v;
+    }, function (e) {
+      clearTimeout(timer);
+      throw e;
     }).then(function (json) {
       if (json && json.ok) return json.data;
       var err = new ApiError((json && json.error) || 'internal',

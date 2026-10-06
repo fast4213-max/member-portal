@@ -67,12 +67,14 @@ function checkPasswordLocked_(role, password) {
 /** action: login  { role: 'member' | 'officer', password } */
 function login_(_, p) {
   var role = (p.role === 'officer' || p.role === 'admin') ? 'officer' : 'member';
-  checkPasswordAttempt_(role, p.password);
-
   var token = sha256Hex_(Utilities.getUuid() + Utilities.getUuid() + Date.now());
   var session = { role: role, actor: ROLE_NAMES[role], epoch: prop_('TOKEN_EPOCH') || '0' };
-  CacheService.getScriptCache().put('tok:' + token, JSON.stringify(session), SESSION_HOURS * 3600);
-  logAudit_(role, session.actor, 'login_ok', '', '');
+  // 照合とログ記録を1回の排他にまとめる（排他を2回取りに行くと待ちが2倍になるため）
+  withLock_(function () {
+    checkPasswordLocked_(role, p.password);
+    CacheService.getScriptCache().put('tok:' + token, JSON.stringify(session), SESSION_HOURS * 3600);
+    logAudit_(role, session.actor, 'login_ok', '', '');
+  });
   // 組織名はログインした人にだけ返す（ログイン前の画面には出さない）
   return { token: token, role: role, expiresIn: SESSION_HOURS * 3600, org: org_() };
 }
