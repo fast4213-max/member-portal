@@ -9,6 +9,7 @@ var S = {
   loginTab: 'member',
   pw: '',
   showPw: false,
+  loggingIn: false,  // ログインの返事を待っている間
   dialog: null,      // ダイアログを作る関数（null なら閉じている）
   fresh: true        // 画面が切り替わった直後（スクロールを先頭に戻す）
 };
@@ -88,13 +89,17 @@ function loginView() {
   var submit = function (e) {
     e.preventDefault();
     var btn = e.target.querySelector('button[type=submit]');
+    if (S.loggingIn) return;
     if (!S.pw) { toast('パスワードを入力してください', 'err'); return; }
+    S.loggingIn = true;   // 待っている間に描き直されても、ボタンを押せないままにする
     withBusy(btn, Api.call('login', { role: S.loginTab, password: S.pw })).then(function (d) {
+      S.loggingIn = false;
       Api.save(d.token, d.role, d.org);
       S.pw = '';
       S.showPw = false;
       if (d.role === 'officer') enterAdmin(); else enterMember();
     }, function (err) {
+      S.loggingIn = false;
       S.pw = '';
       render();
       toast(err.message, 'err');
@@ -120,7 +125,7 @@ function loginView() {
             onClick: function () { S.showPw = !S.showPw; render(); } }, ico('eye', 20))),
         h('p', { style: 'margin:0;font-size:13px;color:#5A6475' },
           admin ? '役員の方だけが使います。5回続けて間違えると15分ロックされます。' : '分会から案内されたパスワードを入力してください。')),
-      h('button', { type: 'submit', class: 'btn ' + (admin ? 'navy' : 'pri') + ' full', style: 'height:52px;font-size:16px' },
+      h('button', { type: 'submit', class: 'btn ' + (admin ? 'navy' : 'pri') + ' full', disabled: !!S.loggingIn, style: 'height:52px;font-size:16px' },
         'ログイン', ico('arrow', 18)),
       h('div', { class: 'caution' }, ico('warn', 18, 'margin-top:1px'),
         h('span', null, '個人情報を含みます。画面の共有・スクリーンショットの取り扱いに注意してください。'))));
