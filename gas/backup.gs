@@ -7,7 +7,7 @@
  *  ・コピーは自分だけのファイル（共有されていない状態）で作られる
  */
 
-var BACKUP_KEEP_DAYS = 30;
+var BACKUP_KEEP_DAYS = 7;
 var BACKUP_PREFIX = '組合員台帳_バックアップ_';
 
 /** 今すぐバックアップを1つ作る。作ったファイル名を返す */
